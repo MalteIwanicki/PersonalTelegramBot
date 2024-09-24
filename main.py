@@ -47,7 +47,7 @@ def send_help(message):
 def get_costs(message):
     with open("costs.json", "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
-    result = f"*Total:* {round(data["total"],2)}€\n*In:* {round(data["in"],2)}€\n*Out:* {round(data["out"],2)}€"
+    result = f'*Total:* {round(data["total"],2)}€\n*In:* {round(data["in"],2)}€\n*Out:* {round(data["out"],2)}€'
     bot.send_message(message.chat.id, result, parse_mode="Markdown")
 
 
