@@ -9,8 +9,9 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import chat
 from generate_anki_deck import generate_deck
 
-with open("deck.json", "r", encoding="utf-8") as f:
-    deck = json.load(f)
+with open("config.json", "r", encoding="utf-8") as f:
+    conf = json.load(f)
+deck = conf["deck"]
 
 token = os.environ.get("TELEGRAM_API_TOKEN")
 bot = telebot.TeleBot(token)
@@ -26,13 +27,35 @@ def authorized_only(f):
     return decorated_function
 
 commands = {
-    "/help": "help",
-    "/costs": "Shows the costs of the OpenAI API",
-    "/ask": "sends a message to chatgpt",
-    "/anki": "Creates Anki Cards from the input text",
-    "/exportAnki": "exports the current anki Deck to an .apkg file and clears it",
+    "blank": "chats with chatgpt",
+    "clear": "clears chathistory",
+    "help": "help",
+    "costs": "Shows the costs of the OpenAI API",
+    "anki": "Creates Anki Cards from the input text",
+    "export_anki": "exports the current anki Deck to an .apkg file and clears it",
+    "set_model": "Choose the GPT model to use",
 }
 
+@bot.message_handler(commands=["set_model"])
+@authorized_only
+def set_model(message):
+    markup = InlineKeyboardMarkup()
+    models = ["gpt-4o-mini", "gpt-4o"]
+    for model in models:
+        markup.add(InlineKeyboardButton(model, callback_data=f"set_model_{model}"))
+    bot.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
+    
+@bot.callback_query_handler(func=lambda call: call.data.startswith("set_model_"))
+@authorized_only
+def callback_set_model(call):
+    selected_model = call.data.split("set_model_")[1]
+    with open("config.json","r") as f:
+        conf = json.load(f)
+    conf["model"] = selected_model
+    with open("config.json","w") as f:
+        json.dump(conf, f, indent=4)
+    bot.answer_callback_query(call.id, f"Model set to {selected_model}")
+    
 
 @bot.message_handler(commands=["help"])
 def send_help(message):
@@ -41,40 +64,48 @@ def send_help(message):
         help_text += f"{command} - {description}\n"
     bot.send_message(message.chat.id, help_text)
 
+@bot.message_handler(commands=["clear"])
+@authorized_only
+def clear(message):
+    chat.clear_chathistory()
+    bot.send_message(message.chat.id, f"🧹 chat cleared 🧽")
 
+ 
 @bot.message_handler(commands=["costs"])
 @authorized_only
 def get_costs(message):
-    with open("costs.json", "r", encoding="utf-8") as json_file:
-        data = json.load(json_file)
-    result = f'*Total:* {round(data["total"],2)}€\n*In:* {round(data["in"],2)}€\n*Out:* {round(data["out"],2)}€'
+    with open("config.json", encoding="utf-8") as json_file:
+        conf = json.load(json_file)
+    costs = conf["costs"]
+    result = f'*Total:* {round(costs["total"],2)}€\n*In:* {round(costs["in"],2)}€\n*Out:* {round(costs["out"],2)}€'
     bot.send_message(message.chat.id, result, parse_mode="Markdown")
 
 
-@bot.message_handler(commands=["ask"])
+@bot.message_handler(func=lambda m: True)
 @authorized_only
 def chat_response(message):
-    text = message.text.replace("/ask ", "")
-    result = chat.ask(text)
-    bot.send_message(message.chat.id, result, parse_mode="Markdown")
+    answer = chat.chat(message.text)
+    bot.send_message(message.chat.id, answer, parse_mode="Markdown")
 
 
-@bot.message_handler(commands=["exportAnki"])
+@bot.message_handler(commands=["export_anki"])
 @authorized_only
-def chat_response(message):
+def export_anki(message):
     global deck
     file = generate_deck(deck)
     with open(file, "rb") as file:
         bot.send_document(message.chat.id, file)
     deck = []
-    with open("deck.json", "w", encoding="utf-8") as f:
-        json.dump(deck, f, indent=4)
+    with open("conf.json", encoding="utf-8") as f:
+        conf = json.load(f)
+        conf["deck"]=deck
+        json.dump(conf, f, indent=4)
     os.remove(file)
 
 
 @bot.message_handler(commands=["anki"])
 @authorized_only
-def chat_response(message):
+def create_anki_cards(message):
     text = message.text.replace("/anki ", "")
     cards = chat.create_cards(text)
     if type(cards) == str:  # not valid json format
@@ -104,11 +135,13 @@ def chat_response(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("delete_"))
+@authorized_only
 def delete_card(call):
     bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("add_"))
+@authorized_only
 def add_card(call):
     card_text = call.message.text
     deck.append(json.loads(card_text))

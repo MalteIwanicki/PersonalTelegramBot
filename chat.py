@@ -1,10 +1,36 @@
 import os
 from openai import OpenAI
+import datetime
 import json
 
-MODEL = "gpt-4o-mini"
-PRICE_PROMPT_TOKENS = 0.000150 / 1000
-PRICE_COMPLETION_TOKENS = 0.000600 / 1000
+def get_chathistory():
+    with open("chathistory.txt","r",encoding="utf-8")as f:
+        history = f.read()
+    return history
+
+def update_chathistory(txt):
+    dt = datetime.datetime.now()
+    dt = dt.replace(microsecond=0)
+    with open("chathistory.txt","a",encoding="utf-8")as f:
+        f.writelines(f"{dt.isoformat()} | {txt}\n")
+
+def clear_chathistory():
+    with open("chathistory.txt","w",encoding="utf-8")as f:
+        f.writelines("")
+        
+def load_model():
+    with open("config.json") as f:
+            conf = json.load(f)
+    return conf["model"]
+
+def get_token_prices():
+    # This function should query OpenAI's API to get the current token prices
+    # For demonstration, we will return the hardcoded values
+    # You should replace this with an actual API call if available
+    return {
+        "prompt": 0.000150 / 1000,
+        "completion": 0.000600 / 1000
+    }
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
@@ -12,30 +38,35 @@ client = OpenAI(
 
 
 def update_costs(usage):
-    p_out = usage.completion_tokens * PRICE_COMPLETION_TOKENS
-    p_in = usage.completion_tokens * PRICE_PROMPT_TOKENS
-    with open("costs.json", "r", encoding="utf-8") as json_file:
-        data = json.load(json_file)
-    data["out"] += p_out
-    data["in"] += p_in
-    data["total"] += p_out + p_in
-    with open("costs.json", "w", encoding="utf-8") as json_file:
-        json.dump(data, json_file, indent=4)
+    p_out = usage.completion_tokens * get_token_prices()["completion"]
+    p_in = usage.prompt_tokens * get_token_prices()["prompt"]
+    with open("config.json", "r", encoding="utf-8") as json_file:
+        conf = json.load(json_file)
+    conf["costs"]["out"] += p_out
+    conf["costs"]["in"] += p_in
+    conf["costs"]["total"] += p_out + p_in
+    with open("config.json", "w", encoding="utf-8") as json_file:
+        json.dump(conf, json_file, indent=4)
 
 
-def ask(input):
+def chat(input):
+    update_chathistory("user:\n"+input)
     result = client.chat.completions.create(
         messages=[
+            {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german'},
             {
                 "role": "user",
-                "content": input,
+                "content": get_chathistory(),
             }
         ],
-        model="gpt-4o-mini",
+        
+        model=load_model(),
         temperature=0.0,
     )
     update_costs(result.usage)
-    return result.choices[0].message.content
+    answer = result.choices[0].message.content
+    update_chathistory("assistant:\n"+answer)
+    return answer
 
 
 def create_cards(text):
@@ -130,7 +161,7 @@ Do not output any other text besides JSON. Begin output now as the template abov
                 "content": query,
             }
         ],
-        model="gpt-4o-mini",
+        model=load_model(),
         temperature=0.0,
     )
     update_costs(result.usage)
