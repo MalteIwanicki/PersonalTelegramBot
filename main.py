@@ -34,6 +34,7 @@ commands = {
     "anki": "Creates Anki Cards from the input text",
     "export_anki": "exports the current anki Deck to an .apkg file and clears it",
     "set_model": "Choose the GPT model to use",
+    "chat_history":"the current chat history"
 }
 
 @bot.message_handler(commands=["set_model"])
@@ -80,13 +81,11 @@ def get_costs(message):
     result = f'*Total:* {round(costs["total"],2)}€\n*In:* {round(costs["in"],2)}€\n*Out:* {round(costs["out"],2)}€'
     bot.send_message(message.chat.id, result, parse_mode="Markdown")
 
-
-@bot.message_handler(func=lambda m: True)
+@bot.message_handler(commands=["chat_history"])
 @authorized_only
-def chat_response(message):
-    answer = chat.chat(message.text)
-    bot.send_message(message.chat.id, answer, parse_mode="Markdown")
-
+def chat_history(message):
+    with open("chathistory.txt", "rb") as file:
+        bot.send_document(message.chat.id, file)
 
 @bot.message_handler(commands=["export_anki"])
 @authorized_only
@@ -96,9 +95,10 @@ def export_anki(message):
     with open(file, "rb") as file:
         bot.send_document(message.chat.id, file)
     deck = []
-    with open("conf.json", encoding="utf-8") as f:
+    with open("conf.json", "r", encoding="utf-8") as f:
         conf = json.load(f)
-        conf["deck"]=deck
+    conf["deck"]=deck
+    with open("conf.json", "w", encoding="utf-8") as f:
         json.dump(conf, f, indent=4)
     os.remove(file)
 
@@ -109,7 +109,7 @@ def create_anki_cards(message):
     text = message.text.replace("/anki ", "")
     cards = chat.create_cards(text)
     if type(cards) == str:  # not valid json format
-        bot.send_message(message.chat.id, cards, parse_mode="Markdown")
+        bot.send_message(message.chat.id, f"# **NOT VALID JSON**\n\n{cards}", )
         return None
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
@@ -117,7 +117,6 @@ def create_anki_cards(message):
         sent_message = bot.send_message(
             message.chat.id,
             json.dumps(card),  # json format
-            parse_mode="Markdown",
             reply_markup=markup,
         )
         delete_button = InlineKeyboardButton(
@@ -145,12 +144,26 @@ def delete_card(call):
 def add_card(call):
     card_text = call.message.text
     deck.append(json.loads(card_text))
-    with open("deck.json", "w", encoding="utf-8") as f:
-        json.dump(deck, f, indent=4)
+    with open("config.json","r", encoding="utf-8") as f:
+        conf = json.load(f)
+    conf["deck"]=deck
+    with open("config.json", "w", encoding="utf-8") as f:
+        json.dump(conf, f, indent=4)
     bot.answer_callback_query(
         call.id, f"Card added to deck!\nDeck contains  {len(deck)} cards."
     )
     bot.delete_message(call.message.chat.id, call.message.message_id)
+
+
+
+@bot.message_handler(func=lambda m: m.text[0]!="/")
+@authorized_only
+def chat_response(message):
+    answer = chat.chat(message.text)
+    try:
+        bot.send_message(message.chat.id, answer, parse_mode="Markdown")
+    except telebot.apihelper.ApiTelegramException:
+        bot.send_message(message.chat.id, answer)
 
 
 if __name__ == "__main__":

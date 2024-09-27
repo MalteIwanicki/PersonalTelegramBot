@@ -154,13 +154,16 @@ Let's do it step by step when creating a deck of flashcards:
 
 Do not output any other text besides JSON. Begin output now as the template above.
 """
+   
     result = client.chat.completions.create(
         messages=[
+            {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german. YOU CAN ONLY ANSWER IN VALID JSON FORMAT'},
             {
                 "role": "user",
                 "content": query,
-            }
+            },
         ],
+        response_format= { "type": "json_object" },
         model=load_model(),
         temperature=0.0,
     )
