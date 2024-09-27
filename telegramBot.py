@@ -75,7 +75,7 @@ def callback_set_model(call):
 
 @bot.message_handler(commands=["help"])
 def send_help(message):
-    help_text = "Here are the available commands:\n\n"
+    help_text = "Here the commands:\n\n"
     for command, description in commands.items():
         help_text += f"{command} - {description}\n"
     bot.send_message(message.chat.id, help_text)
