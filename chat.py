@@ -3,6 +3,11 @@ from openai import OpenAI
 import datetime
 import json
 
+chat_file = "chathistory.txt"
+if not os.path.exists(chat_file):
+    with open(chat_file, "w") as file:
+        file.write("")
+        
 def get_chathistory():
     with open("chathistory.txt","r",encoding="utf-8")as f:
         history = f.read()

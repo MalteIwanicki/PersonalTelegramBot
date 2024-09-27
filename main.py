@@ -9,6 +9,21 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import chat
 from generate_anki_deck import generate_deck
 
+# Check if file exists
+conf_file = "config.json"
+if not os.path.exists(conf_file):
+    data = {
+        "model": "gpt-4o",
+        "costs": {
+            "total": 0,
+            "in": 0,
+            "out": 0
+        },
+        "deck": []
+    }
+    with open(conf_file, "w") as file:
+        json.dump(data, file, indent=4)
+
 with open("config.json", "r", encoding="utf-8") as f:
     conf = json.load(f)
 deck = conf["deck"]
