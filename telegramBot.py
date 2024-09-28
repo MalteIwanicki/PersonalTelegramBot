@@ -11,6 +11,8 @@ import chat
 from generate_anki_deck import generate_deck
 
 logger.add("log.txt")
+with open("VERSION","r")as f:
+    VERSION = f.read()
 
 # Check if file exists
 conf_file = "config.json"
@@ -47,6 +49,7 @@ def authorized_only(f):
 commands = {
     "blank": "chats with chatgpt",
     "clear": "clears chathistory",
+    "version":"returns the Version",
     "help": "help",
     "costs": "Shows the costs of the OpenAI API",
     "anki": "Creates Anki Cards from the input text",
@@ -58,9 +61,7 @@ commands = {
 @bot.message_handler(commands=["version"])
 @authorized_only
 def return_version(message):
-    with open("VERSION","r") as f:
-        version =f.read() 
-    bot.send_message(message.chat.id, f"VERSION: {version}")
+    bot.send_message(message.chat.id, f"VERSION: {VERSION}")
     
 @bot.message_handler(commands=["set_model"])
 @authorized_only
@@ -192,5 +193,5 @@ def chat_response(message):
 
 
 if __name__ == "__main__":
-    logger.info("Bot Started")
+    logger.info(f"Bot({VERSION}) started")
     bot.infinity_polling()
