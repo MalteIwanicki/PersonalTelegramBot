@@ -55,6 +55,13 @@ commands = {
     "chat_history":"the current chat history"
 }
 
+@bot.message_handler(commands=["version"])
+@authorized_only
+def return_version(message):
+    with open("VERSION","r") as f:
+        version =f.read() 
+    bot.send_message(message.chat.id, f"VERSION: {version}")
+    
 @bot.message_handler(commands=["set_model"])
 @authorized_only
 def set_model(message):
