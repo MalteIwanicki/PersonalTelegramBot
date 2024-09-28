@@ -5,9 +5,12 @@ import json
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from loguru import logger
 
 import chat
 from generate_anki_deck import generate_deck
+
+logger.add("log.txt")
 
 # Check if file exists
 conf_file = "config.json"
@@ -182,5 +185,5 @@ def chat_response(message):
 
 
 if __name__ == "__main__":
-    print("Bot Started")
+    logger.info("Bot Started")
     bot.infinity_polling()

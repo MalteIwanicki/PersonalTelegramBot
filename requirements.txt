@@ -3,3 +3,4 @@ black
 black[jupyter]
 telebot
 genanki
+loguru
