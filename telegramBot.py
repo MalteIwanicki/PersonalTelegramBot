@@ -182,4 +182,5 @@ def chat_response(message):
 
 
 if __name__ == "__main__":
+    print("Bot Started")
     bot.infinity_polling()
