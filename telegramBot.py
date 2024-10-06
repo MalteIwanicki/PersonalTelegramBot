@@ -105,19 +105,21 @@ def export_anki(message):
 # CREATE CARDS
 @BOT.message_handler(commands=["anki"])
 @authorized_only
-def create_anki_cards(message):
+def anki(message):
     if config.chat_mode == "anki":
-        create_anki_cards(message)
+        create_cards(message)
     else:
         config.chat_mode="anki"
     config.chat_history=""
-    BOT.send_message(message.chat.id, f"# __chatmode:__ **ANKI**\nTo create cards end with **/anki** or **/chat**", )
+    BOT.send_message(message.chat.id, f"_chatmode:_ *anki*\nTo create cards end with */anki* or */chat*", parse_mode="Markdown" )
 
 
 def create_cards(message):
-    cards = chat.create_cards(config.chat_history)
+    if not (chat_history:=config.chat_history):
+        return None
+    cards = chat.create_cards(chat_history)
     if type(cards) == str:  # not valid json format
-        BOT.send_message(message.chat.id, f"# **NOT VALID JSON**\n\n{cards}", )
+        BOT.send_message(message.id, f"*NOT VALID JSON*\n\n{cards}",  parse_mode="Markdown")
         return None
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
@@ -164,10 +166,10 @@ def add_card(call):
 @authorized_only
 def chat_with_ai(message):
     if config.chat_mode=="anki":
-        create_anki_cards(message)
+        create_cards(message)
     config.chat_mode="chat"
     config.chat_history=""
-    BOT.send_message(message.chat.id, f"# __chatmode:__ **CHAT**\nReset chat with **/chat**", )
+    BOT.send_message(message.chat.id, f"_chatmode:_ *chat*\nReset chat with */chat*", parse_mode="Markdown" )
 
     
 # DEFAULT

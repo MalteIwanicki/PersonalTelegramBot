@@ -28,7 +28,7 @@ def update_costs(usage):
 
 
 def chat(input):
-    config.append_chat_history("USER:\n{input}")
+    config.append_chat_history(f"USER:\n{input}")
     result = client.chat.completions.create(
         messages=[
             {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german'},
@@ -43,7 +43,7 @@ def chat(input):
     )
     update_costs(result.usage)
     answer = result.choices[0].message.content
-    config.append_chat_history("ASSISTANT:\n{answer}")
+    config.append_chat_history(f"ASSISTANT:\n{answer}")
     return answer
 
 
@@ -51,7 +51,7 @@ def create_cards(text):
     query = f"""
 You are my extremly well paid personal assistant.
 I want you to create a deck of flashcards from the text using cards with a front and back side.
-The use of the flashcards hsould be able to replace reading the scientific paper, therefore it needs to convey every essential information.
+The use of the flashcards should be able to replace reading the scientific paper, therefore it needs to convey every essential information.
 
 surrounding rules to create a deck of flashcards:
 - Keep the flashcards simple, clear, and focused on the most important information.
