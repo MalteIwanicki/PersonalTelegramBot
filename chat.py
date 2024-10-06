@@ -3,30 +3,9 @@ from openai import OpenAI
 import datetime
 import json
 
-chat_file = "chathistory.txt"
-if not os.path.exists(chat_file):
-    with open(chat_file, "w") as file:
-        file.write("")
-        
-def get_chathistory():
-    with open("chathistory.txt","r",encoding="utf-8")as f:
-        history = f.read()
-    return history
+import config
+config=config.Config()
 
-def update_chathistory(txt):
-    dt = datetime.datetime.now()
-    dt = dt.replace(microsecond=0)
-    with open("chathistory.txt","a",encoding="utf-8")as f:
-        f.writelines(f"{dt.isoformat()} | {txt}\n")
-
-def clear_chathistory():
-    with open("chathistory.txt","w",encoding="utf-8")as f:
-        f.writelines("")
-        
-def load_model():
-    with open("config.json") as f:
-            conf = json.load(f)
-    return conf["model"]
 
 def get_token_prices():
     # This function should query OpenAI's API to get the current token prices
@@ -45,32 +24,26 @@ client = OpenAI(
 def update_costs(usage):
     p_out = usage.completion_tokens * get_token_prices()["completion"]
     p_in = usage.prompt_tokens * get_token_prices()["prompt"]
-    with open("config.json", "r", encoding="utf-8") as json_file:
-        conf = json.load(json_file)
-    conf["costs"]["out"] += p_out
-    conf["costs"]["in"] += p_in
-    conf["costs"]["total"] += p_out + p_in
-    with open("config.json", "w", encoding="utf-8") as json_file:
-        json.dump(conf, json_file, indent=4)
+    config.update_costs(in_cost=p_in, out_cost=p_out)
 
 
 def chat(input):
-    update_chathistory("user:\n"+input)
+    config.append_chat_history("USER:\n{input}")
     result = client.chat.completions.create(
         messages=[
             {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german'},
             {
                 "role": "user",
-                "content": get_chathistory(),
+                "content": config.chat_history,
             }
         ],
         
-        model=load_model(),
+        model=config.ai_model,
         temperature=0.0,
     )
     update_costs(result.usage)
     answer = result.choices[0].message.content
-    update_chathistory("assistant:\n"+answer)
+    config.append_chat_history("ASSISTANT:\n{answer}")
     return answer
 
 
@@ -169,7 +142,7 @@ Do not output any other text besides JSON. Begin output now as the template abov
             },
         ],
         response_format= { "type": "json_object" },
-        model=load_model(),
+        model=config.ai_model,
         temperature=0.0,
     )
     update_costs(result.usage)

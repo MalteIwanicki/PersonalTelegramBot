@@ -1,5 +1,6 @@
 import os
 from functools import wraps
+import io
 
 import json
 import telebot
@@ -8,139 +9,120 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from loguru import logger
 
 import chat
+import config
 from generate_anki_deck import generate_deck
 
+commands = {
+    "help": "help",
+    "version":"returns the Version",
+    "costs": "Shows the costs of the OpenAI API",
+    "anki": "Updates mode to 'anki'. New cards are created on mode update",
+    "chat":"Updates mode to 'chat'. Old history is cleared",
+    "export_anki": "exports the current anki Deck to an .apkg file and clears it",
+    "set_model": "Choose the GPT model to use",
+}
+
 logger.add("log.txt")
+
 with open("VERSION","r")as f:
     VERSION = f.read()
+    
 
-# Check if file exists
-conf_file = "config.json"
-if not os.path.exists(conf_file):
-    data = {
-        "model": "gpt-4o",
-        "costs": {
-            "total": 0,
-            "in": 0,
-            "out": 0
-        },
-        "deck": []
-    }
-    with open(conf_file, "w") as file:
-        json.dump(data, file, indent=4)
-
-with open("config.json", "r", encoding="utf-8") as f:
-    conf = json.load(f)
-deck = conf["deck"]
-
-token = os.environ.get("TELEGRAM_API_TOKEN")
-bot = telebot.TeleBot(token)
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_API_TOKEN")
+BOT = telebot.TeleBot(TELEGRAM_TOKEN)
 
 OWNER_ID = 1310360635
 def authorized_only(f):
     @wraps(f)
     def decorated_function(message, *args, **kwargs):
         if message.from_user.id != OWNER_ID:
-            bot.send_message(message.chat.id, "you are not authorized.")
+            BOT.send_message(message.chat.id, "you are not authorized.")
             return
         return f(message, *args, **kwargs)
     return decorated_function
 
-commands = {
-    "blank": "chats with chatgpt",
-    "clear": "clears chathistory",
-    "version":"returns the Version",
-    "help": "help",
-    "costs": "Shows the costs of the OpenAI API",
-    "anki": "Creates Anki Cards from the input text",
-    "export_anki": "exports the current anki Deck to an .apkg file and clears it",
-    "set_model": "Choose the GPT model to use",
-    "chat_history":"the current chat history"
-}
 
-@bot.message_handler(commands=["version"])
+config= config.Config()
+
+@BOT.message_handler(commands=["version"])
 @authorized_only
 def return_version(message):
-    bot.send_message(message.chat.id, f"VERSION: {VERSION}")
-    
-@bot.message_handler(commands=["set_model"])
+    BOT.send_message(message.chat.id, f"VERSION: {VERSION}")
+
+# SET AI_MODEL
+@BOT.message_handler(commands=["set_model"])
 @authorized_only
 def set_model(message):
     markup = InlineKeyboardMarkup()
     models = ["gpt-4o-mini", "gpt-4o"]
     for model in models:
         markup.add(InlineKeyboardButton(model, callback_data=f"set_model_{model}"))
-    bot.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
+    BOT.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
     
-@bot.callback_query_handler(func=lambda call: call.data.startswith("set_model_"))
+@BOT.callback_query_handler(func=lambda call: call.data.startswith("set_model_"))
 @authorized_only
 def callback_set_model(call):
     selected_model = call.data.split("set_model_")[1]
-    with open("config.json","r") as f:
-        conf = json.load(f)
-    conf["model"] = selected_model
-    with open("config.json","w") as f:
-        json.dump(conf, f, indent=4)
-    bot.answer_callback_query(call.id, f"Model set to {selected_model}")
+    config.ai_model = selected_model
+    BOT.answer_callback_query(call.id, f"Model set to {selected_model}")
     
-
-@bot.message_handler(commands=["help"])
+# HELP
+@BOT.message_handler(commands=["help"])
 def send_help(message):
     help_text = "Here the commands:\n\n"
     for command, description in commands.items():
         help_text += f"{command} - {description}\n"
-    bot.send_message(message.chat.id, help_text)
-
-@bot.message_handler(commands=["clear"])
-@authorized_only
-def clear(message):
-    chat.clear_chathistory()
-    bot.send_message(message.chat.id, f"🧹 chat cleared 🧽")
-
+    BOT.send_message(message.chat.id, help_text)
  
-@bot.message_handler(commands=["costs"])
+# GET COSTS
+@BOT.message_handler(commands=["costs"])
 @authorized_only
 def get_costs(message):
-    with open("config.json", encoding="utf-8") as json_file:
-        conf = json.load(json_file)
-    costs = conf["costs"]
+    costs = config.costs
     result = f'*Total:* {round(costs["total"],2)}€\n*In:* {round(costs["in"],2)}€\n*Out:* {round(costs["out"],2)}€'
-    bot.send_message(message.chat.id, result, parse_mode="Markdown")
+    BOT.send_message(message.chat.id, result, parse_mode="Markdown")
 
-@bot.message_handler(commands=["chat_history"])
+
+# CHAT HISTORY
+@BOT.message_handler(commands=["chat_history"])
 @authorized_only
 def chat_history(message):
-    with open("chathistory.txt", "rb") as file:
-        bot.send_document(message.chat.id, file)
-
-@bot.message_handler(commands=["export_anki"])
+    chat_history_file = io.BytesIO(config.chat_history.encode('utf-8'))
+    chat_history_file.name = "chathistory.txt"
+    BOT.send_document(message.chat.id, chat_history_file)
+    
+# EXPORT ANKI
+@BOT.message_handler(commands=["export_anki"])
 @authorized_only
 def export_anki(message):
-    global deck
-    file = generate_deck(deck)
+    file = generate_deck(config.anki_deck)
     with open(file, "rb") as file:
-        bot.send_document(message.chat.id, file)
-    deck = []
-    with open("conf.json", "r", encoding="utf-8") as f:
-        conf = json.load(f)
-    conf["deck"]=deck
-    with open("conf.json", "w", encoding="utf-8") as f:
-        json.dump(conf, f, indent=4)
+        BOT.send_document(message.chat.id, file)
+    config.anki_deck=[]
     os.remove(file)
 
 
-@bot.message_handler(commands=["anki"])
+# CREATE CARDS
+@BOT.message_handler(commands=["anki"])
 @authorized_only
 def create_anki_cards(message):
-    text = message.text.replace("/anki ", "")
-    cards = chat.create_cards(text)
+    if config.chat_mode == "anki":
+        create_anki_cards(message)
+    else:
+        config.chat_mode="anki"
+    config.chat_history=""
+    BOT.send_message(message.chat.id, f"# __chatmode:__ **ANKI**\nTo create cards end with **/anki** or **/chat**", )
+
+
+def create_cards(message):
+    cards = chat.create_cards(config.chat_history)
     if type(cards) == str:  # not valid json format
-        bot.send_message(message.chat.id, f"# **NOT VALID JSON**\n\n{cards}", )
+        BOT.send_message(message.chat.id, f"# **NOT VALID JSON**\n\n{cards}", )
         return None
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
 
-        sent_message = bot.send_message(
+        sent_message = BOT.send_message(
             message.chat.id,
             json.dumps(card),  # json format
             reply_markup=markup,
@@ -152,46 +134,57 @@ def create_anki_cards(message):
             "➕", callback_data=f"add_{sent_message.message_id}"
         )
         markup.add(delete_button, add_button)
-        bot.edit_message_reply_markup(
+        BOT.edit_message_reply_markup(
             chat_id=sent_message.chat.id,
             message_id=sent_message.message_id,
             reply_markup=markup,
         )
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("delete_"))
+        
+            
+@BOT.callback_query_handler(func=lambda call: call.data.startswith("delete_"))
 @authorized_only
 def delete_card(call):
-    bot.delete_message(call.message.chat.id, call.message.message_id)
+    BOT.delete_message(call.message.chat.id, call.message.message_id)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("add_"))
+@BOT.callback_query_handler(func=lambda call: call.data.startswith("add_"))
 @authorized_only
 def add_card(call):
     card_text = call.message.text
+    deck = list(config.anki_deck)
     deck.append(json.loads(card_text))
-    with open("config.json","r", encoding="utf-8") as f:
-        conf = json.load(f)
-    conf["deck"]=deck
-    with open("config.json", "w", encoding="utf-8") as f:
-        json.dump(conf, f, indent=4)
-    bot.answer_callback_query(
+    config.anki_deck = deck
+    BOT.answer_callback_query(
         call.id, f"Card added to deck!\nDeck contains  {len(deck)} cards."
     )
-    bot.delete_message(call.message.chat.id, call.message.message_id)
+    BOT.delete_message(call.message.chat.id, call.message.message_id)
 
-
-
-@bot.message_handler(func=lambda m: m.text[0]!="/")
+# CHAT
+@BOT.message_handler(commands=["chat"])
 @authorized_only
-def chat_response(message):
-    answer = chat.chat(message.text)
-    try:
-        bot.send_message(message.chat.id, answer, parse_mode="Markdown")
-    except telebot.apihelper.ApiTelegramException:
-        bot.send_message(message.chat.id, answer)
+def chat_with_ai(message):
+    if config.chat_mode=="anki":
+        create_anki_cards(message)
+    config.chat_mode="chat"
+    config.chat_history=""
+    BOT.send_message(message.chat.id, f"# __chatmode:__ **CHAT**\nReset chat with **/chat**", )
+
+    
+# DEFAULT
+@BOT.message_handler(func=lambda m: m.text[0]!="/")
+@authorized_only
+def default(message):
+    chat_mode=config.chat_mode
+    if chat_mode=="anki":
+        config.chat_history=config.chat_history+"/n"+message.text
+    elif chat_mode=="chat":
+        answer = chat.chat(message.text)
+        try:
+            BOT.send_message(message.chat.id, answer, parse_mode="Markdown")
+        except telebot.apihelper.ApiTelegramException:
+            BOT.send_message(message.chat.id, answer)
 
 
 if __name__ == "__main__":
     logger.info(f"Bot({VERSION}) started")
-    bot.infinity_polling()
+    BOT.infinity_polling()
