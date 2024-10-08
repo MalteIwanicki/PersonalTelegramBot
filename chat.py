@@ -4,17 +4,16 @@ import datetime
 import json
 
 import config
-config=config.Config()
+
+config = config.Config()
 
 
 def get_token_prices():
     # This function should query OpenAI's API to get the current token prices
     # For demonstration, we will return the hardcoded values
     # You should replace this with an actual API call if available
-    return {
-        "prompt": 0.000150 / 1000,
-        "completion": 0.000600 / 1000
-    }
+    return {"prompt": 0.000150 / 1000, "completion": 0.000600 / 1000}
+
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
@@ -31,13 +30,15 @@ def chat(input):
     config.append_chat_history(f"USER:\n{input}")
     result = client.chat.completions.create(
         messages=[
-            {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german'},
+            {
+                "role": "system",
+                "content": "You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german",
+            },
             {
                 "role": "user",
                 "content": config.chat_history,
-            }
+            },
         ],
-        
         model=config.ai_model,
         temperature=0.0,
     )
@@ -132,16 +133,19 @@ Let's do it step by step when creating a deck of flashcards:
 
 Do not output any other text besides JSON. Begin output now as the template above.
 """
-   
+
     result = client.chat.completions.create(
         messages=[
-            {"role": "system", "content": 'You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german. YOU CAN ONLY ANSWER IN VALID JSON FORMAT'},
+            {
+                "role": "system",
+                "content": "You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german. YOU CAN ONLY ANSWER IN VALID JSON FORMAT",
+            },
             {
                 "role": "user",
                 "content": query,
             },
         ],
-        response_format= { "type": "json_object" },
+        response_format={"type": "json_object"},
         model=config.ai_model,
         temperature=0.0,
     )
