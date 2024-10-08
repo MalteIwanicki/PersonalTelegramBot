@@ -13,13 +13,18 @@ import config
 from generate_anki_deck import generate_deck
 
 commands = {
-    "help": "help",
-    "version":"returns the Version",
-    "costs": "Shows the costs of the OpenAI API",
+    
     "anki": "Updates mode to 'anki'. New cards are created on mode update",
     "chat":"Updates mode to 'chat'. Old history is cleared",
     "export_anki": "exports the current anki Deck to an .apkg file and clears it",
     "set_model": "Choose the GPT model to use",
+    "version":"returns the Version",
+    "costs": "Shows the costs of the OpenAI API",
+    "logs": "sends logs",
+    "config":"sends config",
+    "chat_history":"sends the chat history",
+    "help": "help"
+
 }
 
 logger.add("log.txt")
@@ -171,19 +176,38 @@ def chat_with_ai(message):
     config.chat_history=""
     BOT.send_message(message.chat.id, f"_chatmode:_ *chat*\nReset chat with */chat*", parse_mode="Markdown" )
 
+# Send Logs
+@BOT.message_handler(commands=["logs"])
+@authorized_only
+def send_logs(message):
+    with open("logs.txt", "rb") as file:
+        BOT.send_document(message.chat.id, file)
+    
+# send config
+@BOT.message_handler(commands=["export_anki"])
+@authorized_only
+def export_anki(message):
+    with open("config.json", "rb") as file:
+        BOT.send_document(message.chat.id, file)
+    
     
 # DEFAULT
 @BOT.message_handler(func=lambda m: m.text[0]!="/")
 @authorized_only
 def default(message):
+    logger.info(f"received text")
     chat_mode=config.chat_mode
     if chat_mode=="anki":
+        logger.info(f"adding text to anki history")
         config.chat_history=config.chat_history+"/n"+message.text
     elif chat_mode=="chat":
+        logger.info(f"getting answer")
         answer = chat.chat(message.text)
         try:
+            logger.info(f"sending answer as markdown")
             BOT.send_message(message.chat.id, answer, parse_mode="Markdown")
         except telebot.apihelper.ApiTelegramException:
+            logger.warning(f"sending answer as string")
             BOT.send_message(message.chat.id, answer)
 
 
