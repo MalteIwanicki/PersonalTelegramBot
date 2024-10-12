@@ -51,7 +51,7 @@ def chat(input):
 def create_cards(text):
     query = f"""
 You are my extremly well paid personal assistant.
-I want you to create a deck of flashcards from the text using cards with a front and back side.
+I want you to create a flashcards from the text using cards with a front and back side. Also a single flashcard is acceptable if the information is too sparse.
 The use of the flashcards should be able to replace reading the scientific paper, therefore it needs to convey every essential information.
 
 surrounding rules to create a deck of flashcards:
@@ -84,7 +84,7 @@ Make sure to identify the language of the given text!
 From the ImportantInformation above and the knowledge how the questions could be asked, I want you to create flash cards, that prepare a student to be able to answer the questions. 
 
 Let's do it step by step when creating a deck of flashcards:
-    1. Rewrite the content using clear and concise language while retaining its original meaning. A 16 year old should be able to understand the concept.
+    1. Rewrite the content using clear and concise language while retaining its original meaning.
     2. Explain ImportantInformation with the following parameters: LEVEL OF DETAIL = high, LEVEL OF AUDIENCE EXPERTISE = computer science student
     3. Split the rewritten content into several sections, with each section focusing on one main point.
         In example the following text can be split into these sections:
@@ -136,14 +136,33 @@ Let's do it step by step when creating a deck of flashcards:
 
 The Format is strict.
 I repeat, the format is very strict!
-the template is:
+The template for a single card is:
 "[
     {{
         "front":"<front side>",
         "back":"<back side>"
     }}
 ]"
-There can be one or many objects inside the list.
+The template for n cards is:
+"[
+    {{
+        "front":"<front side 1>",
+        "back":"<back side 1>"
+    }},
+    {{
+        "front":"<front side 2>",
+        "back":"<back side 2>"
+    }},
+    {{
+        "front":"<front side n-1>",
+        "back":"<back side n-1>"
+    }},
+    {{
+        "front":"<front side n>",
+        "back":"<back side n>"
+    }}
+]"
+There can be one or many objects inside the array.
 Don't vary the formatting!
 
 Make sure that the language of the flashcards is the same as the identified language of the given text!
@@ -168,8 +187,7 @@ Do not output any other text besides JSON in the mentioned strict format. Begin 
     update_costs(result.usage)
     try:
         cards = json.loads(result.choices[0].message.content)
-        if is_single_card := type(cards) == dict:
-            cards = [cards]
+        cards = cards.get("flashcards", [cards])
         return cards
     except:
         return f"**FALSE FORMAT**:\n\n{result.choices[0].message.content}"

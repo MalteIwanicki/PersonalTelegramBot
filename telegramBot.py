@@ -198,12 +198,13 @@ def add_card(call):
 def reply_to_card(call):
     BOT.delete_message(call.message.chat.id, call.message.message_id)
     card_content = call.message.text
+    config.chat_history = f"Original flash card: {card_content}"
+
     BOT.send_message(
         call.message.chat.id,
         f"Please enter your reply:",
         reply_markup=types.ForceReply(selective=True),
     )
-    config.temp_card_content = card_content
 
 
 @BOT.message_handler(
@@ -212,15 +213,11 @@ def reply_to_card(call):
 )
 @authorized_only
 def process_card_reply(message):
-    card_content = config.temp_card_content
     user_reply = message.text
     # make new chat hsitory
-    combined_text = (
-        f"original flash card: {card_content}\n\nUser feedback: {user_reply}"
-    )
+    combined_text = f"{config.chat_history}\n\nUser feedback: {user_reply}"
     response = chat.chat(combined_text)
     config.chat_history = f"{combined_text}\n\nTeacher response: {response}"
-
     create_cards(message)
 
 
