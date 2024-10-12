@@ -79,6 +79,7 @@ surrounding rules to create a deck of flashcards:
 
 Please read the text below in quotes.
 "{text}"
+Make sure to identify the language of the given text!
 
 From the ImportantInformation above and the knowledge how the questions could be asked, I want you to create flash cards, that prepare a student to be able to answer the questions. 
 
@@ -130,7 +131,7 @@ Let's do it step by step when creating a deck of flashcards:
 {{"front":"How many federal states has germany?",
     "back":"16"}}
 ] 
-
+Make sure that the language of the flashcards is the same as the identified language of the given text!
 Do not output any other text besides JSON. Begin output now as the template above.
 """
 
