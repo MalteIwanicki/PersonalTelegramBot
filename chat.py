@@ -75,7 +75,7 @@ surrounding rules to create a deck of flashcards:
 - The student should be able to understand the topic of the text. 
 - The cards should be constructed and written so that, without having read the entire document, a student should be able to tell what the answer is.
 - cut out non essential information.
-- If there are mathematical formulars or definitions use the anki latex notation tags like "<anki-mathjax> latex code </anki-mathjax>". The input text can use "$" as a latex code marking but the output needs to use "<anki-mathjax>" as tags instead of the "$" notation
+- If there are mathematical symbols or formulars or definitions use the anki latex notation tags like "\\( latex code \\)". The input text can use "$" as a latex code marking but the output needs to use "\\( \\)" as tags instead of the "$" notation
 
 Please read the text below in quotes.
 "{text}"
@@ -151,15 +151,17 @@ Do not output any other text besides JSON. Begin output now as the template abov
         temperature=0.0,
     )
     update_costs(result.usage)
-    json_txt = extract_json_array(result.choices[0].message.content)
-    if not json_txt:
+    try:
+        cards = json.loads(result.choices[0].message.content)
+        if is_single_card := type(cards) == dict:
+            cards = [cards]
+        return cards
+    except:
         return f"**FALSE FORMAT**:\n\n{result.choices[0].message.content}"
-    cards = json.loads(json_txt)
-    return cards
 
 
 def extract_json_array(text):
     try:
-        return json.dumps(text)
+        return json.dumps(text, ensure_ascii=False, indent=2)
     except:
         return None

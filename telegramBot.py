@@ -219,7 +219,7 @@ def process_card_reply(message):
         f"original flash card: {card_content}\n\nUser feedback: {user_reply}"
     )
     response = chat.chat(combined_text)
-    config.chat_history = f"{combined_text}\n\Teacher response: {response}"
+    config.chat_history = f"{combined_text}\n\nTeacher response: {response}"
 
     create_cards(message)
 

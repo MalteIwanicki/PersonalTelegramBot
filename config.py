@@ -20,7 +20,7 @@ class Config:
     def initiate_config(self):
         if not os.path.exists(self.CONFIG_FILE):
             with open(self.CONFIG_FILE, "w", encoding="utf-8") as file:
-                json.dump(self.DEFAULT_CONFIG, file, indent=4)
+                json.dump(self.DEFAULT_CONFIG, file, indent=2, ensure_ascii=False)
 
     def get(self, key=None, default=""):
         with open(self.CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -33,7 +33,7 @@ class Config:
         config = self.get()
         config[key] = value
         with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4)
+            json.dump(config, f, ensure_ascii=False, indent=2)
 
     @property
     def chat_history(self):
