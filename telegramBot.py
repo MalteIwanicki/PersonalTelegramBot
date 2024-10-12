@@ -223,6 +223,18 @@ def send_config(message):
         BOT.send_document(message.chat.id, file)
 
 
+# clear history
+@BOT.message_handler(commands=["clear"])
+@authorized_only
+def clear_history(message):
+    config.chat_history = ""
+    chatmode = config.chat_mode
+    if chatmode == "chat":
+        chat_with_ai(message)
+    elif chatmode == "anki":
+        anki(message)
+
+
 # DEFAULT
 @BOT.message_handler(func=lambda m: m.text[0] != "/")
 @authorized_only
