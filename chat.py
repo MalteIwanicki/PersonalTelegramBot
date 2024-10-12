@@ -158,10 +158,8 @@ Do not output any other text besides JSON. Begin output now as the template abov
     return cards
 
 
-def extract_json_array(s):
-    start = s.find("[")
-    end = s.rfind("]") + 1  # +1 to include the bracket itself
-    if start != -1 and end != -1:
-        return s[start:end]
-    else:
+def extract_json_array(text):
+    try:
+        return json.dumps(text)
+    except:
         return None
