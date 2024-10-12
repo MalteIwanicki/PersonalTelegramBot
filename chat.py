@@ -128,11 +128,26 @@ Let's do it step by step when creating a deck of flashcards:
     "front":"Whats the formular for the well known Pythagorean theorem?",
     "back":"<div class='formular'><anki-mathjax>x^2 + y^2 = z^2</anki-mathjax></div><div class='info'>In this equation:<ul><li><anki-mathjax>x</anki-mathjax> and <anki-mathjax>y</anki-mathjax> are the lengths of the two legs of the triangle.</li><li><anki-mathjax>z</anki-mathjax> is the length of the hypotenuse.</li></ul></div>"
 }},
-{{"front":"How many federal states has germany?",
-    "back":"16"}}
-] 
+{{
+    "front":"How many federal states has germany?",
+    "back":"16"
+}}
+]
+
+The Format is strict.
+I repeat, the format is very strict!
+the template is:
+"[
+    {{
+        "front":"<front side>",
+        "back":"<back side>"
+    }}
+]"
+There can be one or many objects inside the list.
+Don't vary the formatting!
+
 Make sure that the language of the flashcards is the same as the identified language of the given text!
-Do not output any other text besides JSON. Begin output now as the template above.
+Do not output any other text besides JSON in the mentioned strict format. Begin output now as the template above.
 """
 
     result = client.chat.completions.create(
