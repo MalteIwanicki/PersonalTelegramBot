@@ -11,7 +11,7 @@ class Config:
         "costs": {"total": 0, "in": 0, "out": 0},
         "anki_deck": [],
         "chat_history": "",
-        "temp_card_content":""
+        "temp_card_content": "",
     }
 
     def __init__(self):
@@ -81,7 +81,7 @@ class Config:
     @ai_model.setter
     def ai_model(self, value):
         self.update("ai_model", value)
-        
+
     @property
     def temp_card_content(self):
         return self.get("temp_card_content", "")

@@ -154,7 +154,7 @@ def create_cards(message):
 
         sent_message = BOT.send_message(
             message.chat.id,
-            json.dumps(card),  # json format
+            json.dumps(card, ensure_ascii=False, indent=2),  # json format
             reply_markup=markup,
         )
         delete_button = InlineKeyboardButton(
@@ -192,6 +192,7 @@ def add_card(call):
     )
     BOT.delete_message(call.message.chat.id, call.message.message_id)
 
+
 @BOT.callback_query_handler(func=lambda call: call.data.startswith("reply_"))
 @authorized_only
 def reply_to_card(call):
@@ -200,23 +201,29 @@ def reply_to_card(call):
     BOT.send_message(
         call.message.chat.id,
         f"Please enter your reply:",
-        reply_markup=types.ForceReply(selective=True)
+        reply_markup=types.ForceReply(selective=True),
     )
     config.temp_card_content = card_content
 
-@BOT.message_handler(func=lambda message: message.reply_to_message and message.reply_to_message.text.startswith("Please enter your reply:"))
+
+@BOT.message_handler(
+    func=lambda message: message.reply_to_message
+    and message.reply_to_message.text.startswith("Please enter your reply:")
+)
 @authorized_only
 def process_card_reply(message):
     card_content = config.temp_card_content
     user_reply = message.text
     # make new chat hsitory
-    combined_text = f"original flash card: {card_content}\n\nUser feedback: {user_reply}"
+    combined_text = (
+        f"original flash card: {card_content}\n\nUser feedback: {user_reply}"
+    )
     response = chat.chat(combined_text)
     config.chat_history = f"{combined_text}\n\Teacher response: {response}"
-    
+
     create_cards(message)
 
-    
+
 # CHAT
 @BOT.message_handler(commands=["chat"])
 @authorized_only
