@@ -26,8 +26,8 @@ def update_costs(usage):
     config.update_costs(in_cost=p_in, out_cost=p_out)
 
 
-def chat(input):
-    config.append_chat_history(f"USER:\n{input}")
+def chat(text_input):
+    config.append_chat_history(f"USER:\n{text_input}")
     result = client.chat.completions.create(
         messages=[
             {
@@ -48,10 +48,10 @@ def chat(input):
     return answer
 
 
-def create_cards(text):
+def create_cards(text_input):
     query = f"""
 You are my extremly well paid personal assistant.
-I want you to create a flashcards from the text using cards with a front and back side. Also a single flashcard is acceptable if the information is too sparse.
+I want you to create a flashcards from the text using cards with a front and back side. Also a single flashcard can be acceptable if the information is too sparse. But if there can be more than one card created you are needed to do so!
 The use of the flashcards should be able to replace reading the scientific paper, therefore it needs to convey every essential information.
 
 surrounding rules to create a deck of flashcards:
@@ -78,7 +78,9 @@ surrounding rules to create a deck of flashcards:
 - If there are mathematical symbols or formulars or definitions use the anki latex notation tags like "\\( latex code \\)". The input text can use "$" as a latex code marking but the output needs to use "\\( \\)" as tags instead of the "$" notation
 
 Please read the text below in quotes.
-"{text}"
+"
+{text_input}
+"
 Make sure to identify the language of the given text!
 
 From the ImportantInformation above and the knowledge how the questions could be asked, I want you to create flash cards, that prepare a student to be able to answer the questions. 
@@ -133,40 +135,8 @@ Let's do it step by step when creating a deck of flashcards:
     "back":"16"
 }}
 ]
-
-The Format is strict.
-I repeat, the format is very strict!
-The template for a single card is:
-"[
-    {{
-        "front":"<front side>",
-        "back":"<back side>"
-    }}
-]"
-The template for n cards is:
-"[
-    {{
-        "front":"<front side 1>",
-        "back":"<back side 1>"
-    }},
-    {{
-        "front":"<front side 2>",
-        "back":"<back side 2>"
-    }},
-    {{
-        "front":"<front side n-1>",
-        "back":"<back side n-1>"
-    }},
-    {{
-        "front":"<front side n>",
-        "back":"<back side n>"
-    }}
-]"
-There can be one or many objects inside the array.
-Don't vary the formatting!
-
 Make sure that the language of the flashcards is the same as the identified language of the given text!
-Do not output any other text besides JSON in the mentioned strict format. Begin output now as the template above.
+Do not output any other text besides JSON. Begin output now as the template above.
 """
 
     result = client.chat.completions.create(
