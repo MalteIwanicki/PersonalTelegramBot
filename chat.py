@@ -12,7 +12,7 @@ def get_token_prices():
     # This function should query OpenAI's API to get the current token prices
     # For demonstration, we will return the hardcoded values
     # You should replace this with an actual API call if available
-    return {"prompt": 0.000150 / 1000, "completion": 0.000600 / 1000}
+    return {"prompt": 3 / 1_000_000, "completion": 12 / 1_000_000}
 
 
 client = OpenAI(

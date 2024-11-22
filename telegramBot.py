@@ -16,6 +16,7 @@ from generate_anki_deck import generate_deck
 commands = {
     "anki": "Updates mode to 'anki'. New cards are created on mode update",
     "chat": "Updates mode to 'chat'. Old history is cleared",
+    "clear": "Cleares chat history",
     "export_anki": "exports the current anki Deck to an .apkg file and clears it",
     "set_model": "Choose the GPT model to use",
     "version": "returns the Version",
@@ -69,7 +70,7 @@ def return_version(message):
 @authorized_only
 def set_model(message):
     markup = InlineKeyboardMarkup()
-    models = ["gpt-4o-mini", "gpt-4o"]
+    models = ["gpt-4o-mini", "gpt-4o", "o1-mini", "o1-preview"]
     for model in models:
         markup.add(InlineKeyboardButton(model, callback_data=f"set_model_{model}"))
     BOT.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
@@ -267,7 +268,7 @@ def clear_history(message):
 
 
 # DEFAULT
-@BOT.message_handler(func=lambda m: m.text[0] != "/")
+@BOT.message_handler(func=lambda m: m.text[0] != "/", content_types=['text'])
 @authorized_only
 def default(message):
     logger.info(f"received text")
@@ -284,7 +285,25 @@ def default(message):
         except telebot.apihelper.ApiTelegramException:
             logger.warning(f"sending answer as string")
             BOT.send_message(message.chat.id, answer)
-
+            
+@BOT.message_handler(content_types=['document'])
+@authorized_only
+def handle_document(message):
+    if message.document.mime_type == 'text/plain':
+        file_info = BOT.get_file(message.document.file_id)
+        downloaded_file = BOT.download_file(file_info.file_path)
+        file_content = downloaded_file.decode('utf-8')
+        # Process the file content as a normal message
+        if config.chat_mode == "anki":
+            config.chat_history += "\n" + file_content
+        elif config.chat_mode == "chat":
+            response = chat.chat(file_content)
+            try:
+                BOT.send_message(message.chat.id, response, parse_mode="Markdown")
+            except telebot.apihelper.ApiTelegramException:
+                BOT.send_message(message.chat.id, response)
+    else:
+        BOT.send_message(message.chat.id, "Please send a .txt file.")
 
 if __name__ == "__main__":
     logger.info(f"Bot({VERSION}) started")
