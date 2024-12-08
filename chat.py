@@ -50,7 +50,8 @@ def chat(text_input):
 
 def create_cards(text_input):
     query = f"""
-You are my extremly well paid personal assistant.
+You are my extremly well paid personal assistant that tries everything to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german. YOU CAN ONLY ANSWER IN VALID JSON FORMAT
+
 I want you to create a flashcards from the text using cards with a front and back side. Also a single flashcard can be acceptable if the information is too sparse. But if there can be more than one card created you are needed to do so!
 The use of the flashcards should be able to replace reading the scientific paper, therefore it needs to convey every essential information.
 
@@ -138,30 +139,28 @@ Let's do it step by step when creating a deck of flashcards:
 Make sure that the language of the flashcards is the same as the identified language of the given text!
 Do not output any other text besides JSON. Begin output now as the template above.
 """
-
+    temperature = 0 if not config.ai_model in ["o1-mini", "o1-preview"] else 1
     result = client.chat.completions.create(
         messages=[
-            {
-                "role": "system",
-                "content": "You are an ALL knowing entity that tries to give me true answers. Respond like you are trying to maximise value per word you are saying. Like you are texting. Dense. Information Heavy. The User can speak english and german. YOU CAN ONLY ANSWER IN VALID JSON FORMAT",
-            },
             {
                 "role": "user",
                 "content": query,
             },
         ],
-        response_format={"type": "json_object"},
         model=config.ai_model,
-        temperature=0.0,
+        temperature=temperature,
     )
     update_costs(result.usage)
+    content = result.choices[0].message.content
     try:
-        cards = json.loads(result.choices[0].message.content)
-        cards = cards.get("flashcards", [cards])
-        return cards
-    except:
-        return f"**FALSE FORMAT**:\n\n{result.choices[0].message.content}"
-
+        json_string= json.loads(content)
+    except json.JSONDecodeError:
+        try: 
+            json_string = json.loads(content[8:-4])
+        except json.JSONDecodeError:
+             return f"**FALSE FORMAT**:\n\n{content}"
+    return json_string
+    
 
 def extract_json_array(text):
     try:
