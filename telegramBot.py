@@ -116,9 +116,9 @@ def chat_history(message):
 @authorized_only
 def export_anki(message):
     prefix = datetime.datetime.now().strftime("%Y%m%dT%H%M")
-    file = pathlib.Path(__file__).parent / f"files/decks/{prefix}_deck.apkg"
+    filepath = pathlib.Path(__file__).parent / f"files/decks/{prefix}_deck.apkg"
 
-    file = generate_deck(config.anki_deck, file)
+    generate_deck(config.anki_deck, filepath)
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
     config.anki_deck = []
