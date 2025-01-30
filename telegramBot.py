@@ -28,7 +28,7 @@ commands = {
 }
 
 logger.add(
-    "/files/logs/logs.txt",
+    "files/logs/logs.txt",
     level="WARNING",
     backtrace=True,
     diagnose=True,
