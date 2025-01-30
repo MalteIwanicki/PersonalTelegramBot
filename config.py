@@ -3,7 +3,7 @@ import os
 
 
 class Config:
-    CONFIG_FILE = "config.json"
+    CONFIG_FILE = "files/config.json"
 
     DEFAULT_CONFIG = {
         "ai_model": "o1-preview",

@@ -28,7 +28,7 @@ commands = {
 }
 
 logger.add(
-    "logs.txt",
+    "/files/logs/logs.txt",
     level="WARNING",
     backtrace=True,
     diagnose=True,
@@ -116,13 +116,17 @@ def chat_history(message):
 @authorized_only
 def export_anki(message):
     prefix = datetime.datetime.now().strftime("%Y%m%dT%H%M")
-    file = pathlib.Path(__file__).parent / f"{prefix}_deck.apkg"
+    file = pathlib.Path(__file__).parent / f"files/decks/{prefix}_deck.apkg"
 
     file = generate_deck(config.anki_deck, file)
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
     config.anki_deck = []
-    file.unlink()
+    
+    try:
+        os.remove(file)
+    except Exception as e:
+        logger.warning(f"An error occurred: {e}")
 
 
 # CREATE CARDS
@@ -250,7 +254,7 @@ def send_logs(message):
 @BOT.message_handler(commands=["config"])
 @authorized_only
 def send_config(message):
-    file = pathlib.Path(__file__).parent / "config.json"
+    file = pathlib.Path(__file__).parent / "files/config.json"
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
 
