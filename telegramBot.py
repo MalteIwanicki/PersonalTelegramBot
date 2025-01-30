@@ -118,13 +118,13 @@ def export_anki(message):
     prefix = datetime.datetime.now().strftime("%Y%m%dT%H%M")
     filepath = pathlib.Path(__file__).parent / f"files/decks/{prefix}_deck.apkg"
 
-    generate_deck(config.anki_deck, filepath)
+    file = generate_deck(config.anki_deck, filepath)
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
     config.anki_deck = []
     
     try:
-        os.remove(file)
+        os.remove(filepath)
     except Exception as e:
         logger.warning(f"An error occurred: {e}")
 
