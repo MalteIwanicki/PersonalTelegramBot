@@ -10,6 +10,7 @@ from loguru import logger
 import pathlib
 import datetime
 import chat
+import topic_splitter
 import config
 from generate_anki_deck import generate_deck
 
@@ -29,7 +30,7 @@ commands = {
 
 logger.add(
     "files/logs/logs.txt",
-    level="WARNING",
+    level="DEBUG",
     backtrace=True,
     diagnose=True,
     rotation=datetime.timedelta(days=7),
@@ -40,7 +41,7 @@ with open("VERSION", "r") as f:
 
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_API_TOKEN")
-BOT = telebot.TeleBot(TELEGRAM_TOKEN)
+BOT = telebot.TeleBot(TELEGRAM_TOKEN,threaded=False)
 
 OWNER_ID = 1310360635
 
@@ -134,7 +135,7 @@ def export_anki(message):
 @authorized_only
 def anki(message):
     if config.chat_mode == "anki":
-        logger.info("create cards")
+        logger.info(f"create cards")
         create_cards(message)
     else:
         config.chat_mode = "anki"
@@ -158,31 +159,34 @@ class AnkiDeck(BaseModel):
 def create_cards(message):
     if not (chat_history := config.chat_history):
         return None
-    cards = chat.create_cards(chat_history)
+    topics = topic_splitter.split(chat_history)
+    # TODO split smaller if still too big
+    cards = []
+    for title, content in topics.items():
+        cards  = chat.create_cards(title, content)
+        for card in cards.ankicards:
+            markup = InlineKeyboardMarkup(row_width=2)
 
-    for card in cards.ankicards:
-        markup = InlineKeyboardMarkup(row_width=2)
-
-        sent_message = BOT.send_message(
-            message.chat.id,
-            json.dumps(card.dict(), ensure_ascii=False, indent=2),  # json format
-            reply_markup=markup,
-        )
-        delete_button = InlineKeyboardButton(
-            "❌", callback_data=f"delete_{sent_message.message_id}"
-        )
-        add_button = InlineKeyboardButton(
-            "➕", callback_data=f"add_{sent_message.message_id}"
-        )
-        reply_button = InlineKeyboardButton(
-            "💬", callback_data=f"reply_{sent_message.message_id}"
-        )
-        markup.add(delete_button, add_button, reply_button)
-        BOT.edit_message_reply_markup(
-            chat_id=sent_message.chat.id,
-            message_id=sent_message.message_id,
-            reply_markup=markup,
-        )
+            sent_message = BOT.send_message(
+                message.chat.id,
+                json.dumps(card.model_dump(), ensure_ascii=False, indent=2),  # json format
+                reply_markup=markup,
+            )
+            delete_button = InlineKeyboardButton(
+                "❌", callback_data=f"delete_{sent_message.message_id}"
+            )
+            add_button = InlineKeyboardButton(
+                "➕", callback_data=f"add_{sent_message.message_id}"
+            )
+            reply_button = InlineKeyboardButton(
+                "💬", callback_data=f"reply_{sent_message.message_id}"
+            )
+            markup.add(delete_button, add_button, reply_button)
+            BOT.edit_message_reply_markup(
+                chat_id=sent_message.chat.id,
+                message_id=sent_message.message_id,
+                reply_markup=markup,
+            )
 
 
 @BOT.callback_query_handler(func=lambda call: call.data.startswith("delete_"))
@@ -251,7 +255,7 @@ def chat_with_ai(message):
 @BOT.message_handler(commands=["logs"])
 @authorized_only
 def send_logs(message):
-    file = pathlib.Path(__file__).parent / "logs.txt"
+    file = pathlib.Path(__file__).parent/"files/logs/logs.txt"
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
 

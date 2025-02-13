@@ -3,8 +3,9 @@ from openai import OpenAI
 import datetime
 import json
 from pydantic import BaseModel
-
+from loguru import logger
 import config
+import card_amount_guesser
 
 config = config.Config()
 
@@ -57,7 +58,8 @@ def chat(text_input):
     return answer
 
 
-def create_cards(text_input):
+def create_cards(title, content):
+    needed_cards = card_amount_guesser.guess(title, content)
     query = f"""
 - Du bist eine deutschsprachige Professorin der Informatik, die für zusätzliches Einkommen Nachhilfeunterricht gibt.
 - Du unterrichtest einen Mathe-schwachen Data Science Master Student, der keine selbstständigkeit zeigt und keine mathematischen Formeln mit symbolen versteht, jedoch dessen berühmte Eltern horende Summen zahlen, damit dieser besteht. 
@@ -66,15 +68,15 @@ def create_cards(text_input):
 - Dein oberstes Ziel: Stelle sicher dass der Student die Prüfung bestehen wird.
 - Analysiere die Vorlesungen und erstelle wertvolle Studienmaterialien in einfach verdaulichem karteikarten Format. 
 - Lasse keine Prüfungsrelevanten Fragen oder Details dabei aus.
-- Antworte mit genügend Fragen umm jedes konzept und detail abzufragen. 
+- Antworte mit genügend Fragen, mindestens {needed_cards}, um jedes konzept und detail abzufragen. 
 - Wenn günstig verwende Listen als Antwort anstatt fließtext.
 - Bei Fachwörtern nennee die englische Bezeichnung in runder Klammer zusätzlich.
 - unter comment schreibst du noch eine Erklärung oder Eselsbrücke oder Hinweise oder Kontext hinzu, alles was das lernen der Karte vereinfachen kann.
 - für formeln verwende: [latex]1+1=2[/latex]
 
-Hier ist der Vorlesungstext der bearbeitet werden muss:
+Hier ist der Vorlesungstext zum Thema {title} der bearbeitet werden muss:
 '''
-{text_input}
+{content}
 '''
 
 Hier sind Beispiele für Antworten:
@@ -139,6 +141,8 @@ surrounding rules to create a deck of flashcards:
 - The cards should be constructed and written so that, without having read the entire document, a student should be able to tell what the answer is.
 - cut out non essential information.
 - If there are mathematical symbols or formulars or definitions use the anki latex notation tags like "[latex] latex code [/latex]". The input text can use "$" as a latex code marking but the output needs to use "[latex] [/latex]" as tags instead of the "$" notation
+
+CREATE NOW AT LEAST {needed_cards} cards.
 """
     temperature = 0 if not config.ai_model in ["o1-mini", "o1-preview"] else 1
     result = client.beta.chat.completions.parse(
@@ -152,6 +156,7 @@ surrounding rules to create a deck of flashcards:
         temperature=temperature,
         response_format=AnkiDeck
     )
+    logger.debug(f"{result}")
     update_costs(result.usage)
     cards = result.choices[0].message.parsed
     return cards
