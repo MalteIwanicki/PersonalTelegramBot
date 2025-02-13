@@ -17,7 +17,7 @@ client = OpenAI(
 )
 
 
-def split(text:str, max_len=3000):
+def split(text:str, max_len=6000):
     logger.info("Split text into topics")
 
     query = f"""Deine Aufgabe besteht darin den kompletten Text in Kapitel zu unterteilen. Text der nicht zugeordnet werden kann muss in ein "other" kapitel. Benenne dabei jeweils den Kapitel Titel und die Zeichen, die dazu gehören. Hier ein Beispiel:
@@ -58,8 +58,8 @@ Hier ist der zu bearbeitende Text der von zeichen 0 bis {len(text)-1} in mindest
             continue
         else:
             subs = split(content)
+            id, title = title.split(" ",1)
             for subtitle, subcontent in subs.items():
-                id, title = title.split(" ",1)
                 subid, subtitle =subtitle.split(" ",1)
                 output[f"{id}{subid} {title} - {subtitle}"]=subcontent
     return output

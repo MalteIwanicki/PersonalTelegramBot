@@ -15,6 +15,7 @@ class Config:
 
     def __init__(self):
         self.initiate_config()
+        self.read_keys = {}
 
     def initiate_config(self):
         if not os.path.exists(self.CONFIG_FILE):
@@ -22,15 +23,19 @@ class Config:
                 json.dump(self.DEFAULT_CONFIG, file, indent=2, ensure_ascii=False)
 
     def get(self, key=None, default=""):
-        with open(self.CONFIG_FILE, "r", encoding="utf-8") as f:
-            config = json.load(f)
-            if key is None:
-                return config
-            return config.get(key, default)
+        if not key in self.read_keys:
+            with open(self.CONFIG_FILE, "r", encoding="utf-8") as f:
+                config = json.load(f)
+                if key is None:
+                    self.read_keys = config
+                    return self.read_keys
+                self.read_keys[key] = config.get(key, default)
+        return self.read_keys[key]
 
     def update(self, key, value):
         config = self.get()
         config[key] = value
+        self.read_keys[key] = value
         with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
 

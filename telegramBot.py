@@ -155,38 +155,56 @@ class AnkiCard(BaseModel):
 
 class AnkiDeck(BaseModel):
     ankicards: list[AnkiCard]
-    
+
+import concurrent.futures
+import card_deduplicator
 def create_cards(message):
     if not (chat_history := config.chat_history):
         return None
+    #  Split into topics
     topics = topic_splitter.split(chat_history)
     # TODO split smaller if still too big
-    cards = []
-    for title, content in topics.items():
-        cards  = chat.create_cards(title, content)
-        for card in cards.ankicards:
-            markup = InlineKeyboardMarkup(row_width=2)
+    
+    # create flashcards
+    def concurrent_create_cards(args):
+        title, content  = args
+        return chat.create_cards(title, content)
 
-            sent_message = BOT.send_message(
-                message.chat.id,
-                json.dumps(card.model_dump(), ensure_ascii=False, indent=2),  # json format
-                reply_markup=markup,
-            )
-            delete_button = InlineKeyboardButton(
-                "❌", callback_data=f"delete_{sent_message.message_id}"
-            )
-            add_button = InlineKeyboardButton(
-                "➕", callback_data=f"add_{sent_message.message_id}"
-            )
-            reply_button = InlineKeyboardButton(
-                "💬", callback_data=f"reply_{sent_message.message_id}"
-            )
-            markup.add(delete_button, add_button, reply_button)
-            BOT.edit_message_reply_markup(
-                chat_id=sent_message.chat.id,
-                message_id=sent_message.message_id,
-                reply_markup=markup,
-            )
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        cards = list(executor.map(concurrent_create_cards, topics.items()))
+    
+    # reduce level
+    all_cards = []
+    for cards_ in cards:
+        all_cards+=cards_
+    cards = all_cards
+    
+    # remove duplications
+    cards = card_deduplicator.deduplicate(cards)
+    
+    for card in cards:
+        markup = InlineKeyboardMarkup(row_width=2)
+
+        sent_message = BOT.send_message(
+            message.chat.id,
+            json.dumps(card, ensure_ascii=False, indent=2),  # json format
+            reply_markup=markup,
+        )
+        delete_button = InlineKeyboardButton(
+            "❌", callback_data=f"delete_{sent_message.message_id}"
+        )
+        add_button = InlineKeyboardButton(
+            "➕", callback_data=f"add_{sent_message.message_id}"
+        )
+        reply_button = InlineKeyboardButton(
+            "💬", callback_data=f"reply_{sent_message.message_id}"
+        )
+        markup.add(delete_button, add_button, reply_button)
+        BOT.edit_message_reply_markup(
+            chat_id=sent_message.chat.id,
+            message_id=sent_message.message_id,
+            reply_markup=markup,
+        )
 
 
 @BOT.callback_query_handler(func=lambda call: call.data.startswith("delete_"))

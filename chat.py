@@ -58,7 +58,7 @@ def chat(text_input):
     return answer
 
 
-def create_cards(title, content):
+def create_cards(title, content, ai_model = config.ai_model):
     needed_cards = card_amount_guesser.guess(title, content)
     query = f"""
 - Du bist eine deutschsprachige Professorin der Informatik, die für zusätzliches Einkommen Nachhilfeunterricht gibt.
@@ -73,13 +73,21 @@ def create_cards(title, content):
 - Bei Fachwörtern nennee die englische Bezeichnung in runder Klammer zusätzlich.
 - unter comment schreibst du noch eine Erklärung oder Eselsbrücke oder Hinweise oder Kontext hinzu, alles was das lernen der Karte vereinfachen kann.
 - für formeln verwende: [latex]1+1=2[/latex]
+- Halte die Karteikarten einfach, klar und konzentriere dich auf die wichtigsten Informationen.
+- Stelle sicher, dass die Fragen spezifisch und eindeutig sind.
+- Verwende einfache und direkte Sprache, damit die Karten leicht zu lesen und zu verstehen sind.
+- Mach jede Karte relativ klein, das bedeutet, dass das "Text"-Feld nicht mehr als einen Satz enthalten sollte.
+- Schließe keine Informationen ein, bei denen der Text auf unbekannte Teile verweist.
+- Stelle genug Kontext für die Fragen bereit, damit sie kontextfrei und alleine, sinnvoll und beantwortbar ist.
+- gebe auch das oberthema an
+- Experimentiere mit verschiedenen Frageformaten (z. B. wahr/falsch, Lückentext, kurze Antwort), um das Lernen zu verbessern.
+- Stelle sicher, dass das Konzept der Karte verallgemeinert ist und auch ohne Bezug zum Originaltext verstanden wird.
+- Priorisiere Fragen, die das Verständnis testen, anstatt einfache Wiedergabe.
+- vermeide duplikate
+- Wenn eine Antwort in einer Liste organisiert werden kann, füge HTML-Tags hinzu, um diese aufzulisten, z. B.: "<ol><li>item1</li><li>item2</li><li>item3</li></ol>"
+- Wenn es mathematische Symbole oder Formeln oder Definitionen gibt, verwende die Anki-Latex-Notation-Tags wie "[latex] latex code [/latex]". Der Eingabetext kann "$" als Latex-Code-Markierung verwenden, aber die Ausgabe muss die "[latex] [/latex]" Tags anstelle der "$" Notation verwenden.
 
-Hier ist der Vorlesungstext zum Thema {title} der bearbeitet werden muss:
-'''
-{content}
-'''
-
-Hier sind Beispiele für Antworten:
+Hier sind Beispiele für die Karten Antworten:
 {{
 "ankicards":[
 {{
@@ -122,29 +130,15 @@ Hier sind Beispiele für Antworten:
 }}
 
 '''
-surrounding rules to create a deck of flashcards:
-- Keep the flashcards simple, clear, and focused on the most important information.
-- Make sure the questions are specific and unambiguous.
-- Use simple and direct language to make the cards easy to read and understand.
-- For every important information the following text should be at least one flashcard
-- Make each card relatively small, that means your "text" field should not be more than one sentence.
-- do not include information where the text referes to unknown parts.
-- Include enough context for the questions to be meaningful and answerable.
-- Experiment with different question formats (e.g., true/false, fill-in-the-blank, short answer) to enhance learning.
-- make sure that the concept of the card is generalized and also udnerstood without refering to the original text.
-- if the text contains multiple related concepts, consider creating separate flashcards for each.
-- Prioritize questions that test understanding rather than simple recall.
-- If an answer can be organized into a list, do that by adding html tags to list them, e.g.: "<ol><li>item1</li><li>item2</li><li>item2</li></ol>"
-- Make sure the context of the information can be understood so that a student is able to fill the missing information. 
-- You can also ask a question and add the information behind. 
-- The student should be able to understand the topic of the text. 
-- The cards should be constructed and written so that, without having read the entire document, a student should be able to tell what the answer is.
-- cut out non essential information.
-- If there are mathematical symbols or formulars or definitions use the anki latex notation tags like "[latex] latex code [/latex]". The input text can use "$" as a latex code marking but the output needs to use "[latex] [/latex]" as tags instead of the "$" notation
 
-CREATE NOW AT LEAST {needed_cards} cards.
+
+Hier ist der Vorlesungstext zum Thema {title} der bearbeitet werden muss:
+'''
+{content}
+'''
+Erzeuge jetzt mindestens {needed_cards} karteikarten.
 """
-    temperature = 0 if not config.ai_model in ["o1-mini", "o1-preview"] else 1
+    temperature = 0
     result = client.beta.chat.completions.parse(
         messages=[
             {
@@ -152,13 +146,13 @@ CREATE NOW AT LEAST {needed_cards} cards.
                 "content": query,
             },
         ],
-        model=config.ai_model,
+        model=ai_model,
         temperature=temperature,
         response_format=AnkiDeck
     )
     logger.debug(f"{result}")
     update_costs(result.usage)
-    cards = result.choices[0].message.parsed
+    cards = [card.model_dump() for card in result.choices[0].message.parsed.ankicards]
     return cards
     
 
