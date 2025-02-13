@@ -134,6 +134,7 @@ def export_anki(message):
 @authorized_only
 def anki(message):
     if config.chat_mode == "anki":
+        logger.info("create cards")
         create_cards(message)
     else:
         config.chat_mode = "anki"
@@ -144,22 +145,27 @@ def anki(message):
         parse_mode="Markdown",
     )
 
+from pydantic import BaseModel
 
+class AnkiCard(BaseModel):
+    front: str
+    back: str
+    comment:str
+
+class AnkiDeck(BaseModel):
+    ankicards: list[AnkiCard]
+    
 def create_cards(message):
     if not (chat_history := config.chat_history):
         return None
     cards = chat.create_cards(chat_history)
-    if type(cards) == str:  # not valid json format
-        BOT.send_message(
-            message.chat.id, f"*NOT VALID JSON*\n\n{cards}", parse_mode="Markdown"
-        )
-        return None
-    for card in cards:
+
+    for card in cards.ankicards:
         markup = InlineKeyboardMarkup(row_width=2)
 
         sent_message = BOT.send_message(
             message.chat.id,
-            json.dumps(card, ensure_ascii=False, indent=2),  # json format
+            json.dumps(card.dict(), ensure_ascii=False, indent=2),  # json format
             reply_markup=markup,
         )
         delete_button = InlineKeyboardButton(
