@@ -13,6 +13,7 @@ import chat
 import topic_splitter
 import config
 from generate_anki_deck import generate_deck
+import time
 
 commands = {
     "anki": "Updates mode to 'anki'. New cards are created on mode update",
@@ -187,16 +188,20 @@ def create_cards(message):
     cards = all_cards
 
     # remove duplications
-    cards = card_deduplicator.deduplicate(cards)
+    # cards = card_deduplicator.deduplicate(cards)
 
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
-
-        sent_message = BOT.send_message(
-            message.chat.id,
-            json.dumps(card, ensure_ascii=False, indent=2),  # json format
-            reply_markup=markup,
-        )
+        while True:
+            try:
+                sent_message = BOT.send_message(
+                    message.chat.id,
+                    json.dumps(card, ensure_ascii=False, indent=2),  # json format
+                    reply_markup=markup,
+                )
+                break
+            except telebot.apihelper.ApiTelegramException:
+                time.sleep(1)
         delete_button = InlineKeyboardButton(
             "❌", callback_data=f"delete_{sent_message.message_id}"
         )
@@ -207,11 +212,16 @@ def create_cards(message):
             "💬", callback_data=f"reply_{sent_message.message_id}"
         )
         markup.add(delete_button, add_button, reply_button)
-        BOT.edit_message_reply_markup(
-            chat_id=sent_message.chat.id,
-            message_id=sent_message.message_id,
-            reply_markup=markup,
-        )
+        while True:
+            try:
+                BOT.edit_message_reply_markup(
+                    chat_id=sent_message.chat.id,
+                    message_id=sent_message.message_id,
+                    reply_markup=markup,
+                )
+                break
+            except telebot.apihelper.ApiTelegramException:
+                time.sleep(1)
 
 
 @BOT.callback_query_handler(func=lambda call: call.data.startswith("delete_"))

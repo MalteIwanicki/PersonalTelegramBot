@@ -28,8 +28,9 @@ Output: {{"duplications": [2,3,5]}}
 
 
 Hier sind die Karteikarten zum deduplizieren: {cards}"""
-    try:
-        while True:
+    while True:
+        try:
+
             result = client.beta.chat.completions.parse(
                 messages=[
                     {
@@ -42,9 +43,9 @@ Hier sind die Karteikarten zum deduplizieren: {cards}"""
                 response_format=Duplicates,
             )
             break
-    except RateLimitError as e:
-        logger.debug(e.message)
-        time.sleep(2)
+        except RateLimitError as e:
+            logger.debug(e.message)
+            time.sleep(2)
     duplicates = sorted(result.choices[0].message.parsed.duplications)
     out_cards = []
     for i, card in enumerate(orig_cards):

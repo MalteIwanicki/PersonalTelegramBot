@@ -29,8 +29,9 @@ def guess(title: str, content: str):
 
 Antworte nur im json format.
 Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {title} erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können: {content}"""
-    try:
-        while True:
+    while True:
+        try:
+
             result = client.beta.chat.completions.parse(
                 messages=[
                     {
@@ -43,9 +44,9 @@ Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {tit
                 response_format=NeededFlashCards,
             )
             break
-    except RateLimitError as e:
-        logger.debug(f"{e.message}")
-        time.sleep(2)
+        except RateLimitError as e:
+            logger.debug(f"{e.message}")
+            time.sleep(2)
 
     amount = result.choices[0].message.parsed.amount
     logger.info(f"{amount} cards needed.")
