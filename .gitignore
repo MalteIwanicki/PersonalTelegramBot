@@ -166,3 +166,4 @@ chathistory.txt
 config.json
 *.apkg
 logs.txt
+files/logs/*
