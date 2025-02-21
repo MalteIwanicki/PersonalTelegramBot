@@ -1,7 +1,9 @@
 import os
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from pydantic import BaseModel
 from loguru import logger
+import time
+
 
 class Duplicates(BaseModel):
     duplications: list[int]
@@ -14,7 +16,10 @@ client = OpenAI(
 
 def deduplicate(orig_cards):
     logger.info("judging, how many cards are needed")
-    cards = {i:{"front":card["front"],"back":card["back"]} for i, card in enumerate(orig_cards)}
+    cards = {
+        i: {"front": card["front"], "back": card["back"]}
+        for i, card in enumerate(orig_cards)
+    }
     query = f"""
 Wir minimalisieren unsere Karteikarten. Welche Karteikarten sind redundant oder wiederholen die info einer anderen karteikarte?
 Beispiel:
@@ -23,18 +28,23 @@ Output: {{"duplications": [2,3,5]}}
 
 
 Hier sind die Karteikarten zum deduplizieren: {cards}"""
-    
-    result = client.beta.chat.completions.parse(
-        messages=[
-            {
-                "role": "user",
-                "content": query,
-            },
-        ],
-        model="gpt-4o-mini",
-        temperature=0,
-        response_format=Duplicates
-    )
+    try:
+        while True:
+            result = client.beta.chat.completions.parse(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": query,
+                    },
+                ],
+                model="gpt-4o-mini",
+                temperature=0,
+                response_format=Duplicates,
+            )
+            break
+    except RateLimitError as e:
+        logger.debug(e.message)
+        time.sleep(2)
     duplicates = sorted(result.choices[0].message.parsed.duplications)
     out_cards = []
     for i, card in enumerate(orig_cards):

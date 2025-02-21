@@ -4,11 +4,7 @@ import datetime
 MODEL = genanki.Model(
     1607392319,
     "Simple Model",
-    fields=[
-        {"name": "Question"},
-        {"name": "Answer"},
-        {"name":"Extra"}
-    ],
+    fields=[{"name": "Question"}, {"name": "Answer"}, {"name": "Extra"}],
     templates=[
         {
             "name": "Card 1",
@@ -58,13 +54,14 @@ opacity:0.3;
 font-size:0.5em;
 padding-bottom:0.8em;
 }
-"""
+""",
 )
 
 
 def generate_deck(deck, filename):
     notes = [
-        genanki.Note(model=MODEL, fields=[card["front"], card["back"], card["comment"]] ) for card in deck
+        genanki.Note(model=MODEL, fields=[card["front"], card["back"], card["comment"]])
+        for card in deck
     ]
     new_deck = genanki.Deck(2059400110, "New Cards")
     [new_deck.add_note(note) for note in notes]

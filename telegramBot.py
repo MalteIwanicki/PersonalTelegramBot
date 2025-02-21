@@ -41,7 +41,7 @@ with open("VERSION", "r") as f:
 
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_API_TOKEN")
-BOT = telebot.TeleBot(TELEGRAM_TOKEN,threaded=False)
+BOT = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False)
 
 OWNER_ID = 1310360635
 
@@ -123,7 +123,7 @@ def export_anki(message):
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
     config.anki_deck = []
-    
+
     try:
         os.remove(filepath)
     except Exception as e:
@@ -146,42 +146,49 @@ def anki(message):
         parse_mode="Markdown",
     )
 
+
 from pydantic import BaseModel
+
 
 class AnkiCard(BaseModel):
     front: str
     back: str
-    comment:str
+    comment: str
+
 
 class AnkiDeck(BaseModel):
     ankicards: list[AnkiCard]
 
+
 import concurrent.futures
 import card_deduplicator
+
+
 def create_cards(message):
     if not (chat_history := config.chat_history):
         return None
     #  Split into topics
     topics = topic_splitter.split(chat_history)
     # TODO split smaller if still too big
-    
+
     # create flashcards
     def concurrent_create_cards(args):
-        title, content  = args
-        return chat.create_cards(title, content)
+        title, content, ai_model = args
+        return chat.create_cards(title, content, ai_model)
 
+    args = ((title, content, config.ai_model) for title, content in topics.items())
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        cards = list(executor.map(concurrent_create_cards, topics.items()))
-    
+        cards = list(executor.map(concurrent_create_cards, args))
+
     # reduce level
     all_cards = []
     for cards_ in cards:
-        all_cards+=cards_
+        all_cards += cards_
     cards = all_cards
-    
+
     # remove duplications
     cards = card_deduplicator.deduplicate(cards)
-    
+
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
 
@@ -273,7 +280,7 @@ def chat_with_ai(message):
 @BOT.message_handler(commands=["logs"])
 @authorized_only
 def send_logs(message):
-    file = pathlib.Path(__file__).parent/"files/logs/logs.txt"
+    file = pathlib.Path(__file__).parent / "files/logs/logs.txt"
     with open(file, "rb") as file:
         BOT.send_document(message.chat.id, file)
 
@@ -300,7 +307,7 @@ def clear_history(message):
 
 
 # DEFAULT
-@BOT.message_handler(func=lambda m: m.text[0] != "/", content_types=['text'])
+@BOT.message_handler(func=lambda m: m.text[0] != "/", content_types=["text"])
 @authorized_only
 def default(message):
     logger.info(f"received text")
@@ -317,14 +324,15 @@ def default(message):
         except telebot.apihelper.ApiTelegramException:
             logger.warning(f"sending answer as string")
             BOT.send_message(message.chat.id, answer)
-            
-@BOT.message_handler(content_types=['document'])
+
+
+@BOT.message_handler(content_types=["document"])
 @authorized_only
 def handle_document(message):
-    if message.document.mime_type == 'text/plain':
+    if message.document.mime_type == "text/plain":
         file_info = BOT.get_file(message.document.file_id)
         downloaded_file = BOT.download_file(file_info.file_path)
-        file_content = downloaded_file.decode('utf-8')
+        file_content = downloaded_file.decode("utf-8")
         # Process the file content as a normal message
         if config.chat_mode == "anki":
             config.chat_history += "\n" + file_content
@@ -336,6 +344,7 @@ def handle_document(message):
                 BOT.send_message(message.chat.id, response)
     else:
         BOT.send_message(message.chat.id, "Please send a .txt file.")
+
 
 if __name__ == "__main__":
     logger.info(f"Bot({VERSION}) started")

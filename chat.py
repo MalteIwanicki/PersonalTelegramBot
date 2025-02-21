@@ -1,23 +1,26 @@
 import os
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 import datetime
 import json
 from pydantic import BaseModel
 from loguru import logger
 import config
 import card_amount_guesser
+import time
 
 config = config.Config()
+
 
 class AnkiCard(BaseModel):
     front: str
     back: str
-    comment:str
+    comment: str
+
 
 class AnkiDeck(BaseModel):
     ankicards: list[AnkiCard]
-    
-    
+
+
 def get_token_prices():
     # This function should query OpenAI's API to get the current token prices
     # For demonstration, we will return the hardcoded values
@@ -28,12 +31,6 @@ def get_token_prices():
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
-
-
-def update_costs(usage):
-    p_out = usage.completion_tokens * get_token_prices()["completion"]
-    p_in = usage.prompt_tokens * get_token_prices()["prompt"]
-    config.update_costs(in_cost=p_in, out_cost=p_out)
 
 
 def chat(text_input):
@@ -52,13 +49,12 @@ def chat(text_input):
         model=config.ai_model,
         temperature=0.0,
     )
-    update_costs(result.usage)
     answer = result.choices[0].message.content
     config.append_chat_history(f"ASSISTANT:\n{answer}")
     return answer
 
 
-def create_cards(title, content, ai_model = config.ai_model):
+def create_cards(title, content, ai_model=config.ai_model):
     needed_cards = card_amount_guesser.guess(title, content)
     query = f"""
 - Du bist eine deutschsprachige Professorin der Informatik, die für zusätzliches Einkommen Nachhilfeunterricht gibt.
@@ -139,22 +135,27 @@ Hier ist der Vorlesungstext zum Thema {title} der bearbeitet werden muss:
 Erzeuge jetzt mindestens {needed_cards} karteikarten.
 """
     temperature = 0
-    result = client.beta.chat.completions.parse(
-        messages=[
-            {
-                "role": "user",
-                "content": query,
-            },
-        ],
-        model=ai_model,
-        temperature=temperature,
-        response_format=AnkiDeck
-    )
+    while True:
+        try:
+            result = client.beta.chat.completions.parse(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": query,
+                    },
+                ],
+                model=ai_model,
+                temperature=temperature,
+                response_format=AnkiDeck,
+            )
+            break
+        except RateLimitError as e:
+            logger.debug(e.message)
+            time.sleep(2)
     logger.debug(f"{result}")
-    update_costs(result.usage)
     cards = [card.model_dump() for card in result.choices[0].message.parsed.ankicards]
     return cards
-    
+
 
 def extract_json_array(text):
     try:

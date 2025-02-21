@@ -1,7 +1,9 @@
 import os
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from pydantic import BaseModel
 from loguru import logger
+import time
+
 
 class NeededFlashCards(BaseModel):
     amount: int
@@ -12,7 +14,7 @@ client = OpenAI(
 )
 
 
-def guess(title:str, content:str):
+def guess(title: str, content: str):
     logger.info("judging, how many cards are needed")
 
     query = f"""
@@ -27,18 +29,24 @@ def guess(title:str, content:str):
 
 Antworte nur im json format.
 Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {title} erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können: {content}"""
-    
-    result = client.beta.chat.completions.parse(
-        messages=[
-            {
-                "role": "user",
-                "content": query,
-            },
-        ],
-        model="gpt-4o-mini",
-        temperature=0,
-        response_format=NeededFlashCards
-    )
+    try:
+        while True:
+            result = client.beta.chat.completions.parse(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": query,
+                    },
+                ],
+                model="gpt-4o-mini",
+                temperature=0,
+                response_format=NeededFlashCards,
+            )
+            break
+    except RateLimitError as e:
+        logger.debug(f"{e.message}")
+        time.sleep(2)
+
     amount = result.choices[0].message.parsed.amount
     logger.info(f"{amount} cards needed.")
     return amount

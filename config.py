@@ -8,7 +8,6 @@ class Config:
     DEFAULT_CONFIG = {
         "ai_model": "o1-preview",
         "chat_mode": "chat",
-        "costs": {"total": 0, "in": 0, "out": 0},
         "anki_deck": [],
         "chat_history": "",
     }
@@ -58,17 +57,6 @@ class Config:
     @chat_mode.setter
     def chat_mode(self, value):
         self.update("chat_mode", value)
-
-    @property
-    def costs(self):
-        return self.get("costs")
-
-    def update_costs(self, in_cost=0, out_cost=0):
-        costs = self.get("costs")
-        costs["in"] += in_cost
-        costs["out"] += out_cost
-        costs["total"] += in_cost + out_cost
-        self.update("costs", costs)
 
     @property
     def anki_deck(self):
