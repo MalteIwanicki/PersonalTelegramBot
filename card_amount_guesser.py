@@ -22,13 +22,14 @@ def guess(title: str, content: str):
 - Du unterrichtest einen Mathe-schwachen Data Science Master Student, der keine selbstständigkeit zeigt und keine mathematischen Formeln mit symbolen versteht, jedoch dessen berühmte Eltern horende Summen zahlen, damit dieser besteht. 
 - Das Durchfallen des Nachhilfe Schülers würde das ende der Karriere bedeuten. 
 - Es geht hier nicht nur lehrreich zu sein sondern um möglichst viel stoff in den kopf des Studenten zu packen, damit dieser die Prüfung besteht. 
+- vermeide Wiederholungen wenn möglich
 - Dein oberstes Ziel: Stelle sicher dass der Student die Prüfung bestehen wird.
 - Analysiere den folgenden lehrtext für den wertvolle Studienmaterialien in einfach verdaulichem karteikarten Format erstellt werden müssen. 
 - Lasse keine Prüfungsrelevanten Fragen oder Details dabei aus.
 - Es werden genügend Fragen benötigt um jedes konzept und detail abzufragen. 
 
 Antworte nur im json format.
-Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {title} erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können: {content}"""
+Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {title} erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können ohne dabei sich zu wiederholen: {content}"""
     while True:
         try:
 

@@ -68,7 +68,7 @@ def create_cards(title, content, ai_model=config.ai_model):
 - Wenn günstig verwende Listen als Antwort anstatt fließtext.
 - Bei Fachwörtern nennee die englische Bezeichnung in runder Klammer zusätzlich.
 - unter comment schreibst du noch eine Erklärung oder Eselsbrücke oder Hinweise oder Kontext hinzu, alles was das lernen der Karte vereinfachen kann.
-- für formeln verwende: [latex]1+1=2[/latex]
+- für formeln verwende: \\(1+1=2\\)
 - Halte die Karteikarten einfach, klar und konzentriere dich auf die wichtigsten Informationen.
 - Stelle sicher, dass die Fragen spezifisch und eindeutig sind.
 - Verwende einfache und direkte Sprache, damit die Karten leicht zu lesen und zu verstehen sind.
@@ -76,12 +76,13 @@ def create_cards(title, content, ai_model=config.ai_model):
 - Schließe keine Informationen ein, bei denen der Text auf unbekannte Teile verweist.
 - Stelle genug Kontext für die Fragen bereit, damit sie kontextfrei und alleine, sinnvoll und beantwortbar ist.
 - gebe auch das oberthema an
+- vermeide Wiederholungen wenn möglich
 - Experimentiere mit verschiedenen Frageformaten (z. B. wahr/falsch, Lückentext, kurze Antwort), um das Lernen zu verbessern.
 - Stelle sicher, dass das Konzept der Karte verallgemeinert ist und auch ohne Bezug zum Originaltext verstanden wird.
 - Priorisiere Fragen, die das Verständnis testen, anstatt einfache Wiedergabe.
 - vermeide duplikate
 - Wenn eine Antwort in einer Liste organisiert werden kann, füge HTML-Tags hinzu, um diese aufzulisten, z. B.: "<ol><li>item1</li><li>item2</li><li>item3</li></ol>"
-- Wenn es mathematische Symbole oder Formeln oder Definitionen gibt, verwende die Anki-Latex-Notation-Tags wie "[latex] latex code [/latex]". Der Eingabetext kann "$" als Latex-Code-Markierung verwenden, aber die Ausgabe muss die "[latex] [/latex]" Tags anstelle der "$" Notation verwenden.
+- Wenn es mathematische Symbole oder Formeln oder Definitionen gibt, verwende die Anki-Latex-Notation-Tags wie "\\( latex code \\)". Der Eingabetext kann "$" als Latex-Code-Markierung verwenden, aber die Ausgabe muss die "\\( \\)" Tags anstelle der "$" Notation verwenden.
 
 Hier sind Beispiele für die Karten Antworten:
 {{
@@ -114,7 +115,7 @@ Hier sind Beispiele für die Karten Antworten:
 }},
 {{
     "front":"The mass-energy equivalence is described by which famous equation?",
-    "back":"<div class='formular'>[latex]E = m \\cdot c^2[/latex]</div><div class='info'>In this equation:<ul><li>[latex]E[/latex] represents energy.</li><li>[latex]m[/latex] represents mass.</li><li>[latex]c[/latex] represents the speed of light in a vacuum, approximately [latex]3 \\times 10^8[/latex] meters per second.</li></ul></div>",
+    "back":"<div class='formular'>\\(E = m \\cdot c^2\\)</div><div class='info'>In this equation:<ul><li>\\(E\\) represents energy.</li><li>\\(m\\) represents mass.</li><li>\\(c\\) represents the speed of light in a vacuum, approximately \\(3 \\times 10^8\\) meters per second.</li></ul></div>",
     "comment":"Die berühmte Gleichung stammt von Albert Einstein und beschreibt den Zusammenhang zwischen Energie (E), Masse (m) und der Lichtgeschwindigkeit (c). Diese Gleichung ist ein Teil seiner speziellen Relativitätstheorie."
 }},
 {{
