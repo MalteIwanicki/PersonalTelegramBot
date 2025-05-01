@@ -162,34 +162,14 @@ class AnkiDeck(BaseModel):
 
 
 import concurrent.futures
-import card_deduplicator
 
 
 def create_cards(message):
     if not (chat_history := config.chat_history):
         return None
-    #  Split into topics
-    topics = topic_splitter.split(chat_history)
-    # TODO split smaller if still too big
 
-    # create flashcards
-    def concurrent_create_cards(args):
-        title, content, ai_model = args
-        return chat.create_cards(title, content, ai_model)
-
-    args = ((title, content, config.ai_model) for title, content in topics.items())
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        cards = list(executor.map(concurrent_create_cards, args))
-
-    # reduce level
-    all_cards = []
-    for cards_ in cards:
-        all_cards += cards_
-    cards = all_cards
-
-    # remove duplications
-    # cards = card_deduplicator.deduplicate(cards)
-
+    cards = chat.create_cards(chat_history, config.ai_model)
+    
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
         while True:

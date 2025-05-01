@@ -14,22 +14,17 @@ client = OpenAI(
 )
 
 
-def guess(title: str, content: str):
+def guess(content: str):
     logger.info("judging, how many cards are needed")
 
-    query = f"""
-- Du bist eine deutschsprachige Professorin der Informatik, die für zusätzliches Einkommen Nachhilfeunterricht gibt.
-- Du unterrichtest einen Mathe-schwachen Data Science Master Student, der keine selbstständigkeit zeigt und keine mathematischen Formeln mit symbolen versteht, jedoch dessen berühmte Eltern horende Summen zahlen, damit dieser besteht. 
-- Das Durchfallen des Nachhilfe Schülers würde das ende der Karriere bedeuten. 
-- Es geht hier nicht nur lehrreich zu sein sondern um möglichst viel stoff in den kopf des Studenten zu packen, damit dieser die Prüfung besteht. 
-- vermeide Wiederholungen wenn möglich
-- Dein oberstes Ziel: Stelle sicher dass der Student die Prüfung bestehen wird.
-- Analysiere den folgenden lehrtext für den wertvolle Studienmaterialien in einfach verdaulichem karteikarten Format erstellt werden müssen. 
-- Lasse keine Prüfungsrelevanten Fragen oder Details dabei aus.
-- Es werden genügend Fragen benötigt um jedes konzept und detail abzufragen. 
+    query = f"""Ich möchte, dass du als professioneller Anki-Kartenersteller agierst, der in der Lage ist, Anki-Karten aus dem von mir bereitgestellten Text zu erstellen.
+
+Bei der Formulierung des Karteninhalts hältst du dich an zwei Prinzipien: Erstens das Minimal-Informations-Prinzip: Das zu lernende Material muss so einfach wie möglich formuliert werden. Einfachheit bedeutet jedoch nicht, dass Informationen verloren gehen oder schwierige Teile ausgelassen werden. Zweitens die Optimierung der Formulierung: Die Formulierung der Inhalte muss so optimiert werden, dass in kürzester Zeit die richtige Assoziation im Gehirn ausgelöst wird. Dies reduziert Fehlerquoten, erhöht die Präzision, verkürzt die Reaktionszeit und verbessert die Konzentration.
+
+Bevor du die Karten erstellst, überprüfst du zunächst den bereitgestellten Inhalt sorgfältig, um festzustellen, wie viele Karten notwendig sind, damit alle relevanten Informationen erhalten bleiben. Du stellst sicher, dass kein Wissen verloren geht und dass jede Karte eine sinnvolle, vollständige Lerneinheit darstellt.
 
 Antworte nur im json format.
-Wieviele Karteikarten müssen wir bestmöglichst für das folgende thema zu {title} erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können ohne dabei sich zu wiederholen: {content}"""
+Wieviele Karteikarten müssen wir bestmöglichst für den folgenden text erstellen damit wir dieses alleine durch karteikarten verstehen und lernen können ohne dabei sich zu wiederholen: {content}"""
     while True:
         try:
 
