@@ -65,33 +65,33 @@ def create_cards(content, ai_model=config.ai_model):
    - Nutze **optimierte Formulierungen**, um das Abrufen von Wissen so effizient wie möglich zu gestalten.
    - **Antworten in Listen**, wenn passend, mit `<ol><li>Item</li></ol>`-Tags für eine bessere Darstellung.
    - **Fachbegriffe zusätzlich in Englisch**, in runden Klammern.
-   - **Formeln** mit `\\(latex code\\)` in Anki-Notation.
+   - **Formeln** mit '\\(latex code\\)' in Anki-Notation.
    - **Kontext** bereitstellen, damit jede Karte auch unabhängig sinnvoll ist.
 
 ### Format:
 Antworte **ausschließlich im JSON-Format** mit folgender Struktur:
 
-```json
-{
+'''json
+{{
   "ankicards": [
-    {
+    {{
       "front": "Hier steht die Frage, möglichst präzise formuliert.",
       "back": "Hier steht die Antwort mit minimalem, aber vollständigem Inhalt."
-    },
-    {
+    }},
+    {{
       "front": "Welche Farben hat eine Ampel?",
       "back": "<ol><li>Grün</li><li>Gelb</li><li>Rot</li></ol>"
-    },
-    {
+    }},
+    {{
       "front": "Welche Formel beschreibt die Äquivalenz von Masse und Energie?",
       "back": "\\(E = m \\cdot c^2\\)"
-    }
+    }}
   ]
-}
-```
+}}
+'''
 
 ### Ziel:
-- Mindestens `{needed_cards}` Karten erzeugen.
+- Mindestens '{needed_cards}' Karten erzeugen.
 - **Keine Duplikate, keine unnötigen Wiederholungen**.
 - **Verschiedene Frageformate**, z. B. Frage/Antwort, Lückentext, Wahr/Falsch.
 - **Verallgemeinertes Wissen**, nicht nur direkte Wiedergabe aus dem Text.
@@ -100,11 +100,11 @@ Antworte **ausschließlich im JSON-Format** mit folgender Struktur:
 
 Hier ist der Vorlesungstext, den du in Karten umwandeln sollst:
 
-```
+'''
 {content}
-```
+'''
 
-**Erstelle jetzt mindestens `{needed_cards}` perfekt formulierte Anki-Karten!**
+**Erstelle jetzt mindestens '{needed_cards}' perfekt formulierte Anki-Karten!**
 
 """
     temperature = 0
@@ -125,6 +125,9 @@ Hier ist der Vorlesungstext, den du in Karten umwandeln sollst:
         except RateLimitError as e:
             logger.debug(e.message)
             time.sleep(2)
+        except Exception as e:
+            logger.debug(e.message)
+            break
     logger.debug(f"{result}")
     cards = [card.model_dump() for card in result.choices[0].message.parsed.ankicards]
     return cards

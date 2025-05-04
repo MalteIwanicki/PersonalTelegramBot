@@ -6,7 +6,7 @@ class Config:
     CONFIG_FILE = "files/config.json"
 
     DEFAULT_CONFIG = {
-        "ai_model": "o1-preview",
+        "ai_model": "gpt-4o",
         "chat_mode": "chat",
         "anki_deck": [],
         "chat_history": "",

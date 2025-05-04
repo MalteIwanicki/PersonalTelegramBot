@@ -10,7 +10,6 @@ from loguru import logger
 import pathlib
 import datetime
 import chat
-import topic_splitter
 import config
 from generate_anki_deck import generate_deck
 import time
@@ -72,7 +71,7 @@ def return_version(message):
 @authorized_only
 def set_model(message):
     markup = InlineKeyboardMarkup()
-    models = ["gpt-4o-mini", "gpt-4o", "o1-mini", "o1-preview"]
+    models = ["gpt-4o-mini", "gpt-4o"]
     for model in models:
         markup.add(InlineKeyboardButton(model, callback_data=f"set_model_{model}"))
     BOT.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
