@@ -6,7 +6,7 @@ class Config:
     CONFIG_FILE = "files/config.json"
 
     DEFAULT_CONFIG = {
-        "ai_model": "gpt-4o",
+        "ai_model": "gpt-4.1",
         "chat_mode": "chat",
         "anki_deck": [],
         "chat_history": "",
@@ -68,7 +68,7 @@ class Config:
 
     @property
     def ai_model(self):
-        return self.get("ai_model", "gpt-4o")
+        return self.get("ai_model", "gpt-4.1")
 
     @ai_model.setter
     def ai_model(self, value):

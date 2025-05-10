@@ -35,7 +35,7 @@ Wieviele Karteikarten müssen wir bestmöglichst für den folgenden text erstell
                         "content": query,
                     },
                 ],
-                model="gpt-4o-mini",
+                model="gpt-4.1-nano",
                 temperature=0,
                 response_format=NeededFlashCards,
             )

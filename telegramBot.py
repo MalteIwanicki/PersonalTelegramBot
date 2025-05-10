@@ -71,7 +71,7 @@ def return_version(message):
 @authorized_only
 def set_model(message):
     markup = InlineKeyboardMarkup()
-    models = ["gpt-4o-mini", "gpt-4o"]
+    models = ["gpt-4.1-mini", "gpt-4.1-nano", "gpt-4.1"]
     for model in models:
         markup.add(InlineKeyboardButton(model, callback_data=f"set_model_{model}"))
     BOT.send_message(message.chat.id, "Choose a GPT model:", reply_markup=markup)
@@ -168,7 +168,7 @@ def create_cards(message):
         return None
 
     cards = chat.create_cards(chat_history, config.ai_model)
-    
+
     for card in cards:
         markup = InlineKeyboardMarkup(row_width=2)
         while True:
